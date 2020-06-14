@@ -1,0 +1,431 @@
+#include "traverse.h"
+#include "utils.h"
+
+/* main function */
+int main(int argc, const char** argv) {
+  /* variables passing by the user */
+  u8 nbPlayers = DEFAULT_NB_PLAYER;
+  u8 difficulty = DEFAULT_DIFFICULTY;
+
+  /* parsing arguments */
+  argc--;
+  argv++;
+  while (argc >= 1) {
+    /* need help */
+    if ((strcmp(*argv, "--help") == 0) || (strcmp(*argv, "-h") == 0)) {
+      Help();
+      return 1;
+    }
+
+    /* checking number of human players */
+    else if ((strcmp(*argv, "--players") == 0) || (strcmp(*argv, "-p") == 0)) {
+      if (--argc < 1) {
+        printf("Bad arguments. Quit\n");
+        Help();
+        return 1;
+      } else {
+        const char* nbPlayersStr = *(++argv);
+        nbPlayers = (u8)atoi(nbPlayersStr);
+        if ((nbPlayers < 2) || (nbPlayers > 4)) {
+          printf("Number of player must be between 2 and 4. Quit\n");
+          Help();
+          return 1;
+        }
+      }
+    }
+
+    /* checking difficulty */
+    else if ((strcmp(*argv, "--difficulty") == 0) || (strcmp(*argv, "-d") == 0)) {
+      if (--argc < 1) {
+        printf("Bad arguments. Quit\n");
+        Help();
+        return 1;
+      } else {
+        const char* difficultyStr = *(++argv);
+        difficulty = (u8)atoi(difficultyStr);
+        if ((difficulty < 0) || (difficulty > 3)) {
+          printf("Difficulty must be between 0 and 3. Quit\n");
+          Help();
+          return 1;
+        }
+      }
+    }
+
+    /* bad arguments */
+    else {
+      printf("Unknown option %s\n", *argv);
+      Help();
+      return 1;
+    }
+    argc--;
+    argv++;
+  } /* end parsing arguments */
+
+  /* init all runtime variables */
+  /* game variables */
+  struct pawn* chessboard[CHESSBOARD_SIZE][CHESSBOARD_SIZE]; /* create chessboard */
+  struct pawn* players[nbPlayers];                           /* array of players */
+  u8           nbPawnP1InBase = 0, nbPawnP2InBase = 0, nbPawnP3InBase = 0, nbPawnP4InBase = 0;
+  u8           nbPawnP1InAdverse = 0, nbPawnP2InAdverse = 0, nbPawnP3InAdverse = 0, nbPawnP4InAdverse = 0;
+  u8           stop = FALSE;
+  u8           round = 0;
+  u8           currentPlayer = 0;
+  u8           mainMenuChoice = 0;
+  u8           moveMenuChoice = 0;
+  u8           selectedPawnId = 0;
+  u8           selectedNewMove = 0;
+  u8           currentType = 0;
+  u8           currentLine = 0;
+  u8           currentColumn = 0;
+  u8           newLine = 0;
+  u8           newColumn = 0;
+  u8           nbNewMoves = 0;
+  u8           confirm = FALSE;
+  u8           canMove = FALSE;
+  u8           whoWin[4] = {0, 0, 0, 0}; /* 0:loose, 1:win. Index = player */
+  move*        allNewMoves = NULL;
+  move*        tmp = NULL;
+  /* for saving/loading variables */
+  const char* userHome = getenv("HOME");
+  char        constPath[100] = "";
+  char        currentFilePath[100] = "";
+  char        fileName[20] = "";
+  struct stat st = {0};
+  xmlNode*    root = NULL;
+  xmlDoc*     xmlFile = NULL;
+  xmlNode*    currentPlayerNode = NULL;
+  xmlNode*    currentPawnNode = NULL;
+
+  /* init path for saving/loading files */
+  strcat(constPath, userHome);
+  strcat(constPath, SAVES_FOLDER);
+  if (stat(constPath, &st) == -1) mkdir(constPath, 0700);
+
+  /* create player 1 */
+  struct pawn player1[NB_PAWNS] = {{0, {PLAYER1_BASE, 1}, PLAYER1, 0}, {1, {PLAYER1_BASE, 2}, PLAYER1, 1},
+                                   {5, {PLAYER1_BASE, 3}, PLAYER1, 2}, {6, {PLAYER1_BASE, 4}, PLAYER1, 3},
+                                   {6, {PLAYER1_BASE, 5}, PLAYER1, 4}, {5, {PLAYER1_BASE, 6}, PLAYER1, 5},
+                                   {1, {PLAYER1_BASE, 7}, PLAYER1, 6}, {0, {PLAYER1_BASE, 8}, PLAYER1, 7}};
+  players[PLAYER1] = player1; /* add it to the players array */
+
+  /* create player 2 */
+  struct pawn player2[NB_PAWNS] = {{0, {PLAYER2_BASE, 1}, PLAYER2, 0}, {2, {PLAYER2_BASE, 2}, PLAYER2, 1},
+                                   {5, {PLAYER2_BASE, 3}, PLAYER2, 2}, {6, {PLAYER2_BASE, 4}, PLAYER2, 3},
+                                   {6, {PLAYER2_BASE, 5}, PLAYER2, 4}, {5, {PLAYER2_BASE, 6}, PLAYER2, 5},
+                                   {2, {PLAYER2_BASE, 7}, PLAYER2, 6}, {0, {PLAYER2_BASE, 8}, PLAYER2, 7}};
+  players[PLAYER2] = player2; /* add it to the players array */
+
+  /* create player 3, only used if needed but must be created whatever happens */
+  /* can't be created inside if statement, because local scope variable ...*/
+  struct pawn player3[NB_PAWNS] = {{0, {1, PLAYER3_BASE}, PLAYER3, 0}, {3, {2, PLAYER3_BASE}, PLAYER3, 1},
+                                   {5, {3, PLAYER3_BASE}, PLAYER3, 2}, {6, {4, PLAYER3_BASE}, PLAYER3, 3},
+                                   {6, {5, PLAYER3_BASE}, PLAYER3, 4}, {5, {6, PLAYER3_BASE}, PLAYER3, 5},
+                                   {3, {7, PLAYER3_BASE}, PLAYER3, 6}, {0, {8, PLAYER3_BASE}, PLAYER3, 7}};
+  players[PLAYER3] = player3; /* add it to the players array */
+
+  /* create player 4, only used if needed but must be created whatever happens */
+  /* can't be created inside if statement, because local scope variable ...*/
+  struct pawn player4[NB_PAWNS] = {{0, {1, PLAYER4_BASE}, PLAYER4, 0}, {4, {2, PLAYER4_BASE}, PLAYER4, 1},
+                                   {5, {3, PLAYER4_BASE}, PLAYER4, 2}, {6, {4, PLAYER4_BASE}, PLAYER4, 3},
+                                   {6, {5, PLAYER4_BASE}, PLAYER4, 4}, {5, {6, PLAYER4_BASE}, PLAYER4, 5},
+                                   {4, {7, PLAYER4_BASE}, PLAYER4, 6}, {0, {8, PLAYER4_BASE}, PLAYER4, 7}};
+  players[PLAYER4] = player4; /* add it to the players array */
+
+  ClearChessboard(chessboard);
+  UpdateChessboard(nbPlayers, players, chessboard);
+
+  /* MAIN LOOP */
+  while (stop == FALSE) {
+    /* new round */
+    round++;
+
+  RELOAD_STATE:
+
+    /***** CHECK VICTORY CONDITION *****/
+    /* all the pawns are on the opponent base line */
+    nbPawnP1InAdverse = GetNbPawnInLine(PLAYER1, PLAYER2_BASE, chessboard);
+    nbPawnP2InAdverse = GetNbPawnInLine(PLAYER2, PLAYER1_BASE, chessboard);
+    if (nbPlayers > 2) nbPawnP3InAdverse = GetNbPawnInColumn(PLAYER3, PLAYER4_BASE, chessboard);
+    if (nbPlayers > 3) nbPawnP4InAdverse = GetNbPawnInColumn(PLAYER4, PLAYER3_BASE, chessboard);
+
+    /* get a winner, or not */
+    if (nbPawnP1InAdverse == 8) whoWin[PLAYER1] = 1;
+    if (nbPawnP2InAdverse == 8) whoWin[PLAYER2] = 1;
+    if ((nbPlayers > 2) && (nbPawnP3InAdverse == 8)) whoWin[PLAYER3] = 1;
+    if ((nbPlayers > 3) && (nbPawnP4InAdverse == 8)) whoWin[PLAYER4] = 1;
+
+    if (GetSumArray(whoWin, nbPlayers) != 0) { /* someone win or draw */
+      stop = TRUE;
+      continue;
+    }
+
+    /* if at round 31, there is on pawn inside base line */
+    if (round == 31) {
+      nbPawnP1InBase = GetNbPawnInLine(PLAYER1, PLAYER1_BASE, chessboard);
+      nbPawnP2InBase = GetNbPawnInLine(PLAYER2, PLAYER2_BASE, chessboard);
+      if (nbPlayers > 2) nbPawnP3InBase = GetNbPawnInColumn(PLAYER3, PLAYER3_BASE, chessboard);
+      if (nbPlayers > 3) nbPawnP4InBase = GetNbPawnInColumn(PLAYER4, PLAYER4_BASE, chessboard);
+
+      /* get a winner, or not */
+      if (nbPawnP1InBase > 0) whoWin[PLAYER2] = 1;
+      if (nbPawnP2InBase > 0) whoWin[PLAYER1] = 1;
+      if ((nbPlayers > 2) && (nbPawnP3InBase > 0)) whoWin[PLAYER4] = 1;
+      if ((nbPlayers > 3) && (nbPawnP4InBase > 0)) whoWin[PLAYER3] = 1;
+
+      if (GetSumArray(whoWin, nbPlayers) != 0) { /* someone win or draw */
+        stop = TRUE;
+        continue;
+      }
+    }
+  /***** END CHECK VICTORY CONDITION *****/
+
+  /***** MENU *****/
+  MAIN_MENU:
+    DrawChessboard(chessboard, currentPlayer, round);
+    printf("Main menu:\n");
+
+    /* The player must move a pawn, unless he can't move */
+    canMove = GetNbMoves(players[currentPlayer], chessboard);
+    if (canMove > 0) {
+      printf("\t1 -> Move a pawn\n");
+      printf("\t2 -> Save state\n");
+      printf("\t3 -> Load state\n");
+      printf("\t4 -> Quit the game\n");
+    } else {
+      printf("You can't move !\n");
+      printf("\t1 -> Skip this round\n");
+      printf("\t2 -> Save state\n");
+      printf("\t3 -> Load state\n");
+      printf("\t4 -> Quit the game\n");
+    }
+    do {
+      printf("Please, choose an action: ");
+      GetIntegerFromStdin(&mainMenuChoice);
+    } while ((mainMenuChoice < 1) || (mainMenuChoice > 4));
+
+    switch (mainMenuChoice) {
+      case ACTIONS:
+      ACTIONS_MENU:
+        if (canMove == FALSE) break; /* Skip this round */
+        /* else the player move a pawn */
+        DrawChessboard(chessboard, currentPlayer, round);
+        printf("Move a pawn:\n");
+        do {
+          printf("Choose pawn id to move (0 to 7): ");
+          GetIntegerFromStdin(&selectedPawnId);
+        } while ((selectedPawnId < 0) || (selectedPawnId > 7));
+
+        DrawChessboard(chessboard, currentPlayer, round);
+        currentType = players[currentPlayer][selectedPawnId].type;
+        currentLine = players[currentPlayer][selectedPawnId].pos.line;
+        currentColumn = players[currentPlayer][selectedPawnId].pos.column;
+        nbNewMoves = 0;
+
+        printf("You chosen the pawn %s%d which is type %s\n", COLUMN_STR[currentColumn], currentLine,
+               PAWN_TYPE_STR[currentType]);
+        printf("\t1 -> List all moves\n");
+        printf("\t2 -> Go back to the main menu\n");
+        do {
+          printf("Please, choose an action:  ");
+          GetIntegerFromStdin(&moveMenuChoice);
+        } while ((moveMenuChoice < 1) || (moveMenuChoice > 2));
+
+        switch (moveMenuChoice) {
+          case COMPUTE_MENU:
+            /* compute all the moves the player can do*/
+            allNewMoves = ComputeFutureMoves(currentLine, currentColumn, OUT_OF_BOUND, OUT_OF_BOUND, currentType,
+                                             currentPlayer, FALSE, chessboard);
+            tmp = allNewMoves;
+
+            /* list all of them for the user */
+            while (tmp != NULL) {
+              if (tmp->mustJump == TRUE) {
+                printf("\t%d -> You can JUMP to ", nbNewMoves + 1);
+                printf("%s%d, passing by: ", COLUMN_STR[tmp->newPos.column], tmp->newPos.line);
+                while (tmp->path != NULL) {
+                  printf("%s%d ", COLUMN_STR[tmp->path->pos.column], tmp->path->pos.line);
+                  tmp->path = tmp->path->pNextJump;
+                }
+                printf("\n");
+              } else {
+                printf("\t%d -> You can MOVE to ", nbNewMoves + 1);
+                printf("%s%d\n", COLUMN_STR[tmp->newPos.column], tmp->newPos.line);
+              }
+              nbNewMoves++;
+              tmp = tmp->pNextMove;
+            }
+
+            /* if we can't move */
+            if (nbNewMoves == 0) {
+              printf("This pawn can't move, choose an another one\n");
+              printf("Press any key to go back\n");
+              getchar();
+              goto ACTIONS_MENU;
+            }
+
+            /* choose a new move */
+            do {
+              printf("Please, choose the new move to do (between %d and %d) ", 1, nbNewMoves);
+              GetIntegerFromStdin(&selectedNewMove);
+            } while ((selectedNewMove < 1) || (selectedNewMove > (nbNewMoves + 1)));
+
+            tmp = allNewMoves;
+            nbNewMoves = 0;
+            while (tmp != NULL) {
+              if (nbNewMoves == (selectedNewMove - 1)) {
+                newColumn = tmp->newPos.column;
+                newLine = tmp->newPos.line;
+              }
+              nbNewMoves++;
+              tmp = tmp->pNextMove;
+            }
+
+            printf("You want to move to %s%d, are you sure ?\n", COLUMN_STR[newColumn], newLine);
+            printf("\t1 -> Yes\n");
+            printf("\t2 -> No\n");
+            do {
+              printf("Please, choose between 1 and 2 :");
+              GetIntegerFromStdin(&confirm);
+            } while ((confirm < 1) || (confirm > 2));
+
+            switch (confirm) {
+              case 1:
+                /* free all computed moves */
+                FreeLinkedListMoves(allNewMoves);
+
+                /* change the new position */
+                players[currentPlayer][selectedPawnId].pos.column = newColumn;
+                players[currentPlayer][selectedPawnId].pos.line = newLine;
+                chessboard[newLine][newColumn] = &players[currentPlayer][selectedPawnId];
+
+                /* clear the old position */
+                chessboard[currentLine][currentColumn] = NULL;
+                break;
+
+              case 2:
+                goto ACTIONS_MENU;
+                break;
+            }
+            break;
+
+          case GO_BACK:
+            goto MAIN_MENU;
+            break;
+        }
+        break;
+
+      case SAVE_STATE:
+        /* reset fileName and currentFilePath */
+        memset(fileName, 0, sizeof(fileName));
+        memset(currentFilePath, 0, sizeof(currentFilePath));
+
+        /* get name of file */
+        printf("Create save file under %s\n", constPath);
+        printf("Please enter the name of the save file (without xml extension): ");
+        fgets(fileName, sizeof(fileName), stdin);
+        fileName[strcspn(fileName, "\n")] = 0; /* remove newline */
+        strcat(fileName, ".xml");
+        strcat(currentFilePath, constPath);
+        strcat(currentFilePath, fileName);
+        printf("Save into: %s\n", fileName);
+
+        /* create xml file */
+        root = xmlNewNode(NULL, BAD_CAST "Traverse");
+        /* save runtime variables into xml file */
+        xmlAddChild(root, SetXmlVariable(NULL, NULL, "nbPlayers", nbPlayers));
+        xmlAddChild(root, SetXmlVariable(NULL, NULL, "difficulty", difficulty));
+        xmlAddChild(root, SetXmlVariable(NULL, NULL, "currentPlayer", currentPlayer));
+        xmlAddChild(root, SetXmlVariable(NULL, NULL, "round", round));
+        /* save players positions */
+        for (u8 i = 0; i < 4; i++) {
+          currentPlayerNode = xmlNewNode(NULL, BAD_CAST "player");
+          xmlSetProp(currentPlayerNode, BAD_CAST "id", BAD_CAST ITOA[i]);
+          for (u8 j = 0; j < 8; j++) {
+            currentPawnNode = xmlNewNode(NULL, BAD_CAST "pawn");
+            xmlSetProp(currentPawnNode, BAD_CAST "id", BAD_CAST ITOA[j]);
+            xmlAddChild(currentPawnNode, SetXmlVariable("axe", "line", "pawn", players[i][j].pos.line));
+            xmlAddChild(currentPawnNode, SetXmlVariable("axe", "column", "pawn", players[i][j].pos.column));
+            xmlAddChild(currentPlayerNode, currentPawnNode);
+          }
+          xmlAddChild(root, currentPlayerNode);
+        }
+
+        /* write into xml file */
+        xmlFile = xmlNewDoc(BAD_CAST "1.0");
+        xmlFile->children = root;
+        //xmlAddChild(xmlDocGetRootElement(xmlFile), root);
+        xmlSaveFormatFile(currentFilePath, xmlFile, xmlIndentTreeOutput);
+
+        /* cleanup */
+        xmlFreeDoc(xmlFile);
+        goto MAIN_MENU;
+        break;
+
+      case LOAD_STATE:
+        /* reset fileName and currentFilePath */
+        memset(fileName, 0, sizeof(fileName));
+        memset(currentFilePath, 0, sizeof(currentFilePath));
+
+        /* get name of file */
+        printf("Load files under %s\n", constPath);
+        printf("Please enter the name of the save to load (without xml extension): ");
+        fgets(fileName, sizeof(fileName), stdin);
+        fileName[strcspn(fileName, "\n")] = 0; /* remove newline */
+        strcat(fileName, ".xml");
+        strcat(currentFilePath, constPath);
+        strcat(currentFilePath, fileName);
+        printf("Load: %s\n", fileName);
+
+        xmlFile = xmlReadFile(currentFilePath, NULL, XML_PARSE_NOBLANKS);
+
+        if (xmlFile == NULL) {
+          printf("error: could not load save file %s\n", fileName);
+        } else {
+          /*Get the root element node */
+          root = xmlDocGetRootElement(xmlFile);
+
+          /* affect runtime variable from save */
+          GetXmlVariableByName(root, "nbPlayers", &nbPlayers);
+          GetXmlVariableByName(root, "difficulty", &difficulty);
+          GetXmlVariableByName(root, "currentPlayer", &currentPlayer);
+          GetXmlVariableByName(root, "round", &round);
+          for (u8 i = 0; i < 4; i++) {
+            GetXmlPlayerNode(root, &currentPlayerNode, i);
+            for (u8 j = 0; j < 8; j++) {
+              GetXmlPawnPositions(currentPlayerNode, j, (u8*)&players[i][j].pos.line, (u8*)&players[i][j].pos.column);
+            }
+          }
+        }
+        /* update the chessboard with the new player's positions */
+        ClearChessboard(chessboard);
+        UpdateChessboard(nbPlayers, players, chessboard);
+
+        /* cleanup */
+        xmlFreeDoc(xmlFile);
+        goto RELOAD_STATE;
+        break;
+
+      case QUIT_GAME: /* Quit the game */
+        stop = TRUE;
+        break;
+    }
+
+    /***** CHANGE CURRENT PLAYER FOR NEXT ROUND *****/
+    currentPlayer = (currentPlayer + 1) % nbPlayers;
+
+  } /* END MAIN LOOP */
+
+  /* print the result of the game */
+  if (GetSumArray(whoWin, nbPlayers) != 1) {
+    printf("Draw..!\n");
+  } else {
+    printf("The player %d WIN !\n", GetWinnerIndex(whoWin, nbPlayers));
+  }
+
+  /* cleanup xml */
+  xmlCleanupParser();
+
+  /* End */
+  printf("Bye!.\n");
+  return 0;
+}

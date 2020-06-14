@@ -1,0 +1,13 @@
+# extensions ignore
+*.o *.a *.so
+
+#folders ignore
+/bin
+/build
+
+#files ignore
+.DS_Store
+Thumbs.db
+.clang-format
+.clang-tidy
+.vscode
