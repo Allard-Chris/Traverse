@@ -84,6 +84,7 @@ extern const char* TERMINAL_COLORS[4];
 extern const char* PAWN_TYPE_SYM[7];
 extern const char* PAWN_TYPE_STR[7];
 extern const char* COLUMN_STR[10];
+extern const char* PLAYERS_STR[4];
 extern const int   PLAYER_GOALS[4];
 
 /* structures */
@@ -143,7 +144,5 @@ u8    GetNbMoves(u8 currentPlayer, pawn** pPawnsCurrentPlayer, pawn** pChessboar
 u8    GetTypeOfCell(u8 line, u8 column, u8 currentPlayer, pawn** pChessboard);
 u8    GetSumArray(u8* array, u8 lenght);
 u8    GetWinnerIndex(u8* array, u8 lenght);
-/* other */
-void  Help();
 
 #endif /* _HEADER_TRAVERSE_H */

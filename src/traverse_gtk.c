@@ -2,16 +2,18 @@
 
 /* each cell of the chessboard has a constant color */
 const color CHESSBOARD_COLOR[CHESSBOARD_SIZE][CHESSBOARD_SIZE] = {
-    {grey_light,    red_dark,   red_light,  red_dark,   red_light,  red_dark,   red_light,  red_dark,   red_light,  grey_dark},
-    {yellow_dark,   grey_light, grey_dark,  grey_light, grey_dark,  grey_light, grey_dark,  grey_light, grey_dark,  green_light},
-    {yellow_light,  grey_dark,  grey_light, grey_dark,  grey_light, grey_dark,  grey_light, grey_dark,  grey_light, green_dark},
-    {yellow_dark,   grey_light, grey_dark,  grey_light, grey_dark,  grey_light, grey_dark,  grey_light, grey_dark,  green_light},
-    {yellow_light,  grey_dark,  grey_light, grey_dark,  grey_light, grey_dark,  grey_light, grey_dark,  grey_light, green_dark},
-    {yellow_dark,   grey_light, grey_dark,  grey_light, grey_dark,  grey_light, grey_dark,  grey_light, grey_dark,  green_light},
-    {yellow_light,  grey_dark,  grey_light, grey_dark,  grey_light, grey_dark,  grey_light, grey_dark,  grey_light, green_dark},
-    {yellow_dark,   grey_light, grey_dark,  grey_light, grey_dark,  grey_light, grey_dark,  grey_light, grey_dark,  green_light},
-    {yellow_light,  grey_dark,  grey_light, grey_dark,  grey_light, grey_dark,  grey_light, grey_dark,  grey_light, green_dark},
-    {grey_dark,     blue_light, blue_dark,  blue_light, blue_dark,  blue_light, blue_dark,  blue_light, blue_dark,  grey_light}};
+    {GREY_LIGHT,    RED_DARK,   RED_LIGHT,  RED_DARK,   RED_LIGHT,  RED_DARK,   RED_LIGHT,  RED_DARK,   RED_LIGHT,  GREY_DARK},
+    {YELLOW_DARK,   GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREEN_LIGHT},
+    {YELLOW_LIGHT,  GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREEN_DARK},
+    {YELLOW_DARK,   GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREEN_LIGHT},
+    {YELLOW_LIGHT,  GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREEN_DARK},
+    {YELLOW_DARK,   GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREEN_LIGHT},
+    {YELLOW_LIGHT,  GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREEN_DARK},
+    {YELLOW_DARK,   GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREEN_LIGHT},
+    {YELLOW_LIGHT,  GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREEN_DARK},
+    {GREY_DARK,     BLUE_LIGHT, BLUE_DARK,  BLUE_LIGHT, BLUE_DARK,  BLUE_LIGHT, BLUE_DARK,  BLUE_LIGHT, BLUE_DARK,  GREY_LIGHT}};
+
+const color PLAYERS_COLOR[4] = {PLAYER1_COLOR, PLAYER2_COLOR, PLAYER3_COLOR, PLAYER4_COLOR};
 
 /* array of png data used to draw pawns */
 /* they are 4 differents png for each player's pawn */
@@ -22,7 +24,7 @@ const color CHESSBOARD_COLOR[CHESSBOARD_SIZE][CHESSBOARD_SIZE] = {
 cairo_surface_t* PAWN_IMAGES[MAX_NB_PLAYER][NB_PAWNS_TYPE];
 
 /* read_t function to take every byte from array to be push into stream */
-/* data come from PNG file (8bit per pixel RGBA) converted into binary array by ld */
+/* data come from PNG file (8bit per pixel RGBA) converted into binary array by ld at compile time */
 cairo_status_t cairo_read_png_from_array(void* closure, u8* data, unsigned int length) {
   cairo_read_png_closure_t* c = (cairo_read_png_closure_t*)(closure);
   memcpy(data, &c->data[c->last], length);
@@ -30,7 +32,7 @@ cairo_status_t cairo_read_png_from_array(void* closure, u8* data, unsigned int l
   return CAIRO_STATUS_SUCCESS;
 }
 
-/* create surface from png stream */
+/* create cairo surface from png stream */
 cairo_surface_t* cairo_surface_from_png_data(u8* data) {
   cairo_surface_t*         surface;
   cairo_read_png_closure_t closure;
@@ -46,7 +48,7 @@ void GetMouseToCell(gdouble mX, gdouble mY, u8* mouseCellX, u8* mouseCellY) {
   *mouseCellY = ((int)(mY)) / CELL_SIZE;
 }
 
-/* clear surface */
+/* clear cairo surface */
 void ClearSurface() {
   cairo_t* cr = cairo_create(G_SURFACE);
   cairo_set_source_rgb(cr, 1, 1, 1);
@@ -54,8 +56,8 @@ void ClearSurface() {
   cairo_destroy(cr);
 }
 
-/* Load all PNG images for pawn */
-void LoadPNGSurface(){
+/* Load all PNG images for each pawn for each player */
+void LoadPNGSurface() {
   PAWN_IMAGES[0][0] = cairo_surface_from_png_data((u8*)&_binary_src_assets_p1s_png_start);
   PAWN_IMAGES[0][1] = cairo_surface_from_png_data((u8*)&_binary_src_assets_p1t_png_start);
   PAWN_IMAGES[0][2] = cairo_surface_from_png_data((u8*)&_binary_src_assets_p1t_png_start);
@@ -106,7 +108,7 @@ void DrawPawns(GtkWidget* widget, pawn** pChessboard) {
       if (pChessboard[(line * CHESSBOARD_SIZE) + column] != NULL) {
         playerId = pChessboard[(line * CHESSBOARD_SIZE) + column]->player;
         pawnType = pChessboard[(line * CHESSBOARD_SIZE) + column]->type;
-        cairo_set_source_surface(cr, PAWN_IMAGES[playerId][pawnType], column * 50, line *50);
+        cairo_set_source_surface(cr, PAWN_IMAGES[playerId][pawnType], (column * 50) + 1 , (line *50) + 1);
         cairo_paint(cr);
       }
     }
@@ -115,38 +117,58 @@ void DrawPawns(GtkWidget* widget, pawn** pChessboard) {
   gtk_widget_queue_draw_area(widget, 0, 0, (CELL_SIZE * 10), (CELL_SIZE * 10));
 }
 
-void DrawChessboardCells(GtkWidget* widget) {
+/* draw circle around the current selected pawn */
+void DrawCircle(GtkWidget* widget, u8 line, u8 column, color currentColor) {
   cairo_t* cr = cairo_create(G_SURFACE);
+  cairo_set_line_width(cr, 2);
+  cairo_set_source_rgb(cr, currentColor.r, currentColor.g, currentColor.b);
+  cairo_arc(cr, ((column * CELL_SIZE) + HALF_CELL_SIZE), ((line * CELL_SIZE) + HALF_CELL_SIZE), HALF_CELL_SIZE - 1, 0, 2 * M_PI);
+  cairo_stroke_preserve(cr);
+  cairo_destroy(cr);
+  gtk_widget_queue_draw_area(widget, 0, 0, (CELL_SIZE * 10), (CELL_SIZE * 10));
+}
+
+/* Draw chessboard background */
+void DrawChessboardCells(GtkWidget* widget) {
+  for (u8 line = 0; line < CHESSBOARD_SIZE; line++) { /* line loop */
+    for (u8 column = 0; column < CHESSBOARD_SIZE; column++) { /* column loop */
+      /* color cells in terms of */
+      DrawCell(widget, line, column, CHESSBOARD_COLOR[line][column]);
+    }
+  }
+}
+
+/* draw single cell */
+void DrawCell(GtkWidget* widget, u8 line, u8 column, color currentColor) {
+  cairo_t* cr = cairo_create(G_SURFACE);
+  cairo_set_antialias (cr, CAIRO_ANTIALIAS_NONE); /* no antialias, to draw on pixel perfect line  */
 
   /* paint to the surface, where we store our state */
   cairo_set_line_join(cr, CAIRO_LINE_JOIN_MITER);
   cairo_set_line_width(cr, CELL_BORDER_SIZE);
 
-  for (u8 line = 0; line < CHESSBOARD_SIZE; line++) { /* line loop */
-    for (u8 column = 0; column < CHESSBOARD_SIZE; column++) { /* column loop */
-      /* color cells in terms of */
-      cairo_set_source_rgb(cr, CHESSBOARD_COLOR[line][column].r, CHESSBOARD_COLOR[line][column].g, CHESSBOARD_COLOR[line][column].b);
+  /* color cells in terms of */
+  cairo_set_source_rgb(cr, currentColor.r, currentColor.g, currentColor.b);
 
-      /* draw cell background */
-      cairo_rectangle(cr, (column * CELL_SIZE), (line * CELL_SIZE), CELL_SIZE, CELL_SIZE);
-      cairo_fill(cr);
+  /* draw cell background */
+  cairo_rectangle(cr, (column * CELL_SIZE), (line * CELL_SIZE), CELL_SIZE, CELL_SIZE);
+  cairo_fill(cr);
 
-      /* draw border down */
-      cairo_set_source_rgb(cr, CELL_BORDER_DOWN_COLOR, CELL_BORDER_DOWN_COLOR, CELL_BORDER_DOWN_COLOR);
-      cairo_move_to(cr, (column * CELL_SIZE), ((line * CELL_SIZE) + (CELL_SIZE - CELL_BORDER_SIZE)));
-      cairo_line_to(cr, ((column * CELL_SIZE) + (CELL_SIZE - CELL_BORDER_SIZE)), ((line * CELL_SIZE) + (CELL_SIZE - CELL_BORDER_SIZE)));
-      cairo_move_to(cr, ((column * CELL_SIZE) + (CELL_SIZE - CELL_BORDER_SIZE)), ((line * CELL_SIZE) + (CELL_SIZE - CELL_BORDER_SIZE)));
-      cairo_line_to(cr, ((column * CELL_SIZE) + (CELL_SIZE - CELL_BORDER_SIZE)), ((line * CELL_SIZE)));
-      cairo_stroke(cr);
-      /* draw border up */
-      cairo_set_source_rgb(cr, CELL_BORDER_UP_COLOR, CELL_BORDER_UP_COLOR, CELL_BORDER_UP_COLOR);
-      cairo_move_to(cr, (column * CELL_SIZE), ((line * CELL_SIZE) + (CELL_SIZE - CELL_BORDER_SIZE)));
-      cairo_line_to(cr, ((column * CELL_SIZE)), ((line * CELL_SIZE)));
-      cairo_move_to(cr, ((column * CELL_SIZE)), ((line * CELL_SIZE)));
-      cairo_line_to(cr, ((column * CELL_SIZE) + (CELL_SIZE - CELL_BORDER_SIZE)), ((line * CELL_SIZE)));
-      cairo_stroke(cr);
-    }
-  }
+  /* draw border down */
+  cairo_set_source_rgb(cr, CELL_BORDER_DOWN_COLOR, CELL_BORDER_DOWN_COLOR, CELL_BORDER_DOWN_COLOR);
+  cairo_move_to(cr, (column * CELL_SIZE), ((line * CELL_SIZE) + (CELL_SIZE - 0.5)));
+  cairo_line_to(cr, ((column * CELL_SIZE) + (CELL_SIZE + 0.5)), ((line * CELL_SIZE) + (CELL_SIZE - 0.5)));
+  cairo_move_to(cr, ((column * CELL_SIZE) + (CELL_SIZE - 0.5)), ((line * CELL_SIZE) + (CELL_SIZE + 0.5)));
+  cairo_line_to(cr, ((column * CELL_SIZE) + (CELL_SIZE - 0.5)), ((line * CELL_SIZE)));
+  cairo_stroke(cr);
+  /* draw border up */
+  cairo_set_source_rgb(cr, CELL_BORDER_UP_COLOR, CELL_BORDER_UP_COLOR, CELL_BORDER_UP_COLOR);
+  cairo_move_to(cr, (column * CELL_SIZE) + 0.5, (line * CELL_SIZE) + 0.5);
+  cairo_line_to(cr, ((column * CELL_SIZE) + CELL_SIZE), (line * CELL_SIZE));
+  cairo_move_to(cr, (column * CELL_SIZE) + 0.5, (line * CELL_SIZE) + 0.5);
+  cairo_line_to(cr, (column * CELL_SIZE), ((line * CELL_SIZE) + CELL_SIZE));
+  cairo_stroke(cr);
+
   cairo_destroy(cr);
 
   /* Now invalidate the affected region of the drawing area */

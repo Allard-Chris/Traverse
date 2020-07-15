@@ -5,6 +5,7 @@ const char* TERMINAL_COLORS[4]  = {ANSI_COLOR_RED, ANSI_COLOR_BLUE, ANSI_COLOR_G
 const char* PAWN_TYPE_SYM[7]    = {SYM_SQUARE, SYM_TRIANGLE_N, SYM_TRIANGLE_S, SYM_TRIANGLE_E, SYM_TRIANGLE_W, SYM_DIAMOND, SYM_CIRCLE};
 const char* PAWN_TYPE_STR[7]    = {"SQUARE", "TRIANGLE_N", "TRIANGLE_S", "TRIANGLE_E", "TRIANGLE_W", "DIAMOND", "CIRCLE"};
 const char* COLUMN_STR[10]      = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J"};
+const char* PLAYERS_STR[4]      = {"Player 1", "Player 2", "Player 3", "Player 4"};
 const int   PLAYER_GOALS[4]     = {PLAYER1_GOAL, PLAYER2_GOAL, PLAYER3_GOAL, PLAYER4_GOAL};
 
 /* alloc new pawn */
@@ -20,9 +21,12 @@ pawn* InitPawn(u8 type, u8 line, u8 column, u8 player, u8 pawnId){
 }
 
 /* free all pawns for a player*/
-void FreePlayerPawns(pawn** pPawnsPlayer1){
-  for (u8 i = 0; i < NB_PAWNS; i++){
-    free(pPawnsPlayer1[i]);
+void FreePlayerPawns(pawn** pPawnsPlayer){
+  for (u8 pawnId = 0; pawnId < NB_PAWNS; pawnId++){
+    if (pPawnsPlayer[pawnId] != NULL) {
+      free(pPawnsPlayer[pawnId]);
+      pPawnsPlayer[pawnId] = NULL;
+    }
   }
 }
 
@@ -309,18 +313,4 @@ u8 GetNbMoves(u8 currentPlayer, pawn** pPawnsCurrentPlayer, pawn** pChessboard) 
     FreeLinkedListMoves(tmp);
   }
   return nbMoves;
-}
-
-void Help() {
-  printf("How to use Traverse:\n");
-  printf("\t./Traverse\n");
-  printf("\t./Traverse -p <2, 3 or 4> -d <0, 1, 2 or 3>\n");
-  printf("\t./Traverse --players <1, 2, 3 or 4> --difficulty <0, 1, 2 or 3>\n");
-  printf("-p, --players: number of players: 2, 3 or 4 [DEFAULT 2]\n");
-  printf("-d, --difficulty: computer difficulties.\n");
-  printf("\t\t0: Humain vs Humain  [DEFAULT]\n");
-  printf("\t\t1: Easy\n");
-  printf("\t\t2: Normal\n");
-  printf("\t\t3: Hard\n");
-  printf("-h, --help : give some help\n");
 }
