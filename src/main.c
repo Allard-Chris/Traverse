@@ -18,7 +18,6 @@ int main(int argc, char **argv) {
 void RunningApp(GtkApplication *app, gpointer user_data) {
   /***** START GTK Init *****/
   /* create GTK windows */
-  GtkWidget* window;
   window = gtk_application_window_new(app);
   gtk_window_set_title(GTK_WINDOW(window), "Traverse");
   gtk_container_set_border_width(GTK_CONTAINER(window), 8);
@@ -41,6 +40,7 @@ void RunningApp(GtkApplication *app, gpointer user_data) {
   gtk_menu_shell_append(GTK_MENU_SHELL(gameMenu), quitItem);
   gtk_menu_item_set_submenu(GTK_MENU_ITEM(gameBarItem), gameMenu);
   gtk_menu_shell_append(GTK_MENU_SHELL(menuBar), gameBarItem);
+  g_signal_connect(quitItem, "activate", G_CALLBACK(QuitGame), NULL);
 
   /* playerMenu */
   GtkWidget* playerMenu = gtk_menu_new();
@@ -79,14 +79,16 @@ void RunningApp(GtkApplication *app, gpointer user_data) {
   g_signal_connect(hardRadioItem,   "toggled", G_CALLBACK(EventDifficultyChanged), (gpointer)2);
 
   /* about menu */
-  GtkWidget* aboutMenu = gtk_menu_new();
-  GtkWidget* aboutBarItem = gtk_menu_item_new_with_label("About");
+  GtkWidget* helpMenu = gtk_menu_new();
+  GtkWidget* helpBarItem = gtk_menu_item_new_with_label("Help");
   GtkWidget* rulesItem    = gtk_menu_item_new_with_label("Rules");
   GtkWidget* aboutItem    = gtk_menu_item_new_with_label("About");
-  gtk_menu_shell_append(GTK_MENU_SHELL(aboutMenu), rulesItem);
-  gtk_menu_shell_append(GTK_MENU_SHELL(aboutMenu), aboutItem);
-  gtk_menu_item_set_submenu(GTK_MENU_ITEM(aboutBarItem), aboutMenu);
-  gtk_menu_shell_append(GTK_MENU_SHELL(menuBar), aboutBarItem);
+  gtk_menu_shell_append(GTK_MENU_SHELL(helpMenu), rulesItem);
+  gtk_menu_shell_append(GTK_MENU_SHELL(helpMenu), aboutItem);
+  gtk_menu_item_set_submenu(GTK_MENU_ITEM(helpBarItem), helpMenu);
+  gtk_menu_shell_append(GTK_MENU_SHELL(menuBar), helpBarItem);
+  g_signal_connect(rulesItem, "activate", G_CALLBACK(RulesMessage), NULL);
+  g_signal_connect(aboutItem, "activate", G_CALLBACK(AboutMessage), NULL);
 
   /* add menu bar to vbox */
   gtk_box_pack_start(GTK_BOX(vbox), menuBar, FALSE, FALSE, 2);
@@ -278,6 +280,9 @@ void QuitGame() {
 
   /* remove global surface on which we draw the game */
   cairo_surface_destroy(G_SURFACE);
+
+  /* quit */
+  exit(0);
 }
 
 /* Create a new surface of the appropriate size to store our scribbles */
@@ -297,6 +302,8 @@ gboolean ConfigureSurface(GtkWidget *widget, GdkEventConfigure *event, gpointer 
   return TRUE;
 }
 
+/* event when clic on chessboard */
+/* clic on empty celm = do nothing */
 gboolean EventClickOnBoard(GtkWidget *widget, GdkEventButton *event) {
   u8 mouseCellX = 0;
   u8 mouseCellY = 0;
@@ -305,6 +312,7 @@ gboolean EventClickOnBoard(GtkWidget *widget, GdkEventButton *event) {
   /* left clic */
   if (event->button == 1) {
     /* if the first boolean check is false, we dont check the second one, so no segmentation fault */
+    /* so the order of arguments inside the if statement are important */
     if ((pChessboard[(mouseCellY * CHESSBOARD_SIZE) + mouseCellX] == NULL) ||
           (pChessboard[(mouseCellY * CHESSBOARD_SIZE) + mouseCellX]->player != currentPlayer)) {
       selectPawn = NULL;
@@ -357,4 +365,50 @@ void EventNbPlayersChanged(GtkWidget* radioMenuItem, gpointer data) {
     }
   }
   ResetGameLogicVariables();
+}
+
+/* just about me, nothing special. Modal Dialog */
+void RulesMessage(){
+  dialogRules = gtk_message_dialog_new(
+      GTK_WINDOW(window),
+      GTK_DIALOG_MODAL,
+      GTK_MESSAGE_INFO,
+      GTK_BUTTONS_CLOSE,
+      "Traverse is played on a square 'checker' game board with a 10 by 10 grid.\n\
+Each player has eight pieces of the same color: 2 squares, 2 diamonds, 2 triangles and 2 circles.\n\
+\n\
+The object of the game is to get all of your pieces into the starting row of the player sitting opposite of you.\n\
+The pieces move in different directions depending upon the shape:\n\
+\t- Squares can move horizontally and vertically.\n\
+\t- Diamonds can move only diagonally.\n\
+\t- Triangles can move forward on the diagonals or straight backwards.\n\
+\t- Circles can move in any direction.\n\
+\n\
+Players take turns moving one piece each turn.\n\
+Two pieces can not occupy the same space.\n\
+Pieces can move in single space moves, one space at a time and only into an empty adjacent space as dictated by the piece's legal moves.\n\
+Players can jump over their own or another player's piece. Jumped pieces are NOT captured, akin to Chinese Checkers.\n\
+Players can string together a series of jumps if each individual jump in the series conforms to the rules governing single jumps.\n\
+The first player to move all of their pieces into the destination row is the winner.\n\
+Players can not force a draw.");
+  gtk_dialog_run(GTK_DIALOG(dialogRules));
+  gtk_widget_destroy(dialogRules);
+}
+
+/* just about me, nothing special. Modal Dialog */
+void AboutMessage(){
+  dialogAbout = gtk_message_dialog_new(
+      GTK_WINDOW(window),
+      GTK_DIALOG_MODAL,
+      GTK_MESSAGE_INFO,
+      GTK_BUTTONS_CLOSE,
+      "Thank you for playing Traverse.\n\
+This game was just a school project.\n\
+Original game created in 1987 and won in 1992 the 'Mensa Select' price.\n\
+All source code at: https://github.com/Allard-Chris/Traverse\n\
+Please report bugs :).\n\
+\n\
+Version 1.0");
+  gtk_dialog_run(GTK_DIALOG (dialogAbout));
+  gtk_widget_destroy(dialogAbout);
 }

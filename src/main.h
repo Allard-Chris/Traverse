@@ -10,9 +10,12 @@
 
 /* globals widgets */
 /* must be accessed by all functions, so they are created on the heap */
+GtkWidget* window;
 GtkWidget *drawingArea;
 cairo_surface_t *G_SURFACE;
 GtkWidget* statusBar;
+GtkWidget* dialogAbout;
+GtkWidget* dialogRules;
 
 /* globals pointers for game logic */
 pawn **pChessboard;    /* like the real life, a cell on a chessboard can be empty or with a pawn on it */
@@ -46,6 +49,8 @@ void UpdateStatusBar(GtkWidget* statusBar, u8 currentPlayer, u8 currentRound);
 void ResetGameLogicVariables();
 void AllocGameVariables();
 void UpdateStatusBar(GtkWidget* statusBar, u8 currentPlayer, u8 currentRound);
+void AboutMessage();
+void RulesMessage();
 void QuitGame();
 
 #endif /* _HEADER_MAIN_H */
