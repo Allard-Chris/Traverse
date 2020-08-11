@@ -53,7 +53,7 @@ void UpdateChessboard(u8 nbPlayers, pawn*** pPlayersPawns, pawn** pChessboard) {
 }
 
 /* draw chessboard in the terminal */
-void  DrawChessboard(pawn** pChessboard, u8 currentPlayer, u8 round) {
+void DrawChessboard(pawn** pChessboard, u8 currentPlayer, u8 round) {
   system(CLEAR);
   printf("------------------------------------------------------------------------\n");
   printf("Round: %d\n", round);
@@ -102,14 +102,15 @@ move* PushNewMove(move* allNewMoves, move* newMove) {
 }
 
 /* free the memory when we finish to use it */
-void FreeLinkedListMoves(move* allNewMoves) {
+void FreeLinkedListMoves(move** allNewMoves) {
   move* tmp; /* to keep the next move to erase before remove it in the current move */
-  while (allNewMoves != NULL) {
-    tmp = allNewMoves->pNextMove;
-    FreeLinkedListJumps(allNewMoves->path);
-    free(allNewMoves);
-    allNewMoves = tmp;
+  while (*allNewMoves != NULL) {
+    tmp = *allNewMoves;
+    FreeLinkedListJumps(&(tmp->path));
+    *allNewMoves = (move*)(*allNewMoves)->pNextMove;
+    free(tmp);
   }
+  allNewMoves = NULL;
 }
 
 /* Create a new move, must be added inside linked list */
@@ -135,14 +136,14 @@ jump* PushNewJump(jump* path, jump* newJump) {
 }
 
 /* free the memory when we finish to use it */
-void FreeLinkedListJumps(jump* path) {
+void FreeLinkedListJumps(jump** path) {
   jump* tmp;
-
-  while (path != NULL) {
-    tmp = path->pNextJump;
-    free(path);
-    path = tmp;
+  while (*path != NULL) {
+    tmp = *path;
+    *path = (jump*)(*path)->pNextJump;
+    free(tmp);
   }
+  path = NULL; /* just to be sure */
 }
 
 /* return the number of pawn, for this player, in this line */
@@ -218,11 +219,11 @@ move* ComputeFutureMoves(u8 currentLine, u8 currentColumn, u8 oldLine, u8 oldCol
       {{0, -1},  {TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, TRUE}}  /* left */
   };
 
+  printf("\n");
   /* do we need to jump to move ? */
   if (mustJump == FALSE) {
     for (u8 i = 0; i < 8; i++) { /* for all neighbours around this cell */
-      if (neighbours[i].usedByType[type] ==
-          TRUE) { /* if this neighbours can be tested by our type */
+      if (neighbours[i].usedByType[type] == TRUE) { /* if this neighbours can be tested by our type */
 
         /* compute neighbours positions and type of cell */
         neighbourLine         = currentLine + neighbours[i].pos.line;
@@ -235,7 +236,7 @@ move* ComputeFutureMoves(u8 currentLine, u8 currentColumn, u8 oldLine, u8 oldCol
         if ((neighbourTypeOfCell == IS_IN_GOAL) || (neighbourTypeOfCell == IS_EMPTY)) {
           /* OK for this position */
           allNewMoves = PushNewMove(allNewMoves, CreateNewMove(neighbourLine, neighbourColumn, FALSE, NULL));
-        } else if ((neighbourTypeOfCell == IS_FULL) && (((jumpedNeighbourTypeOfCell) != IS_OUT_OF_BOUND) || ((jumpedNeighbourTypeOfCell) != IS_FULL))) {
+        } else if ((neighbourTypeOfCell == IS_FULL) && ((jumpedNeighbourTypeOfCell != IS_OUT_OF_BOUND) && (jumpedNeighbourTypeOfCell != IS_FULL))) {
           /* Ok check chained jumps */
           tmpNewMoves = ComputeFutureMoves(jumpedNeighbourLine, jumpedNeighbourColumn, currentLine, currentColumn, type, currentPlayer, TRUE, pChessboard);
           if (tmpNewMoves != NULL) allNewMoves = PushNewMove(allNewMoves, tmpNewMoves);
@@ -245,7 +246,6 @@ move* ComputeFutureMoves(u8 currentLine, u8 currentColumn, u8 oldLine, u8 oldCol
   } else { /* we must to jump to move */
     for (u8 i = 0; i < 8; i++) { /* for all neighbours around this cell */
       if (neighbours[i].usedByType[type] == TRUE) { /* if this neighbours can be tested by our type */
-
         /* compute neighbours positions and type of cell */
         neighbourLine             = currentLine + neighbours[i].pos.line;
         neighbourColumn           = currentColumn + neighbours[i].pos.column;
@@ -310,7 +310,7 @@ u8 GetNbMoves(u8 currentPlayer, pawn** pPawnsCurrentPlayer, pawn** pChessboard) 
     currentType   = pPawnsCurrentPlayer[currentPawnId]->type;
     tmp = ComputeFutureMoves(currentLine, currentColumn, OUT_OF_BOUND, OUT_OF_BOUND, currentType, currentPlayer, FALSE, pChessboard);
     if (tmp != NULL) nbMoves++;
-    FreeLinkedListMoves(tmp);
+    FreeLinkedListMoves(&tmp);
   }
   return nbMoves;
 }

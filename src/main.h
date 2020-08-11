@@ -7,6 +7,9 @@
 #include "utils.h"
 
 #define GAME_STATUS_STR "GameStatus"
+#define WAIT_PAWN 0
+#define PAWN_SELECTED 1
+#define NEW_MOVE 2
 
 /* globals widgets */
 /* must be accessed by all functions, so they are created on the heap */
@@ -24,7 +27,7 @@ pawn **pPawnsPlayer1;  /* Array of address of each player1's pawns */
 pawn **pPawnsPlayer2;  /* Array of address of each player2's pawns */
 pawn **pPawnsPlayer3;  /* Array of address of each player3's pawns */
 pawn **pPawnsPlayer4;  /* Array of address of each player4's pawns */
-pawn *selectPawn;      /* address of the current selected pawn */
+pawn *selectPlayerPawn;      /* address of the current selected pawn */
 move *allNewMoves;
 move *tmp;
 
@@ -36,6 +39,7 @@ u8 currentRound;
 u8 currentType;
 u8 currentLine;
 u8 currentColumn;
+u8 gameState;
 
 /* functions */
 void RunningApp(GtkApplication *app, gpointer user_data);

@@ -48,7 +48,7 @@
 #define CIRCLE 6
 
 /* type of cell */
-#define IS_OUT_OF_BOUND 254
+#define IS_OUT_OF_BOUND 0
 #define IS_IN_EDGE 1
 #define IS_IN_GOAL 2
 #define IS_EMPTY 3
@@ -131,8 +131,8 @@ jump* PushNewJump(jump* path, jump* newJump);
 move* CreateNewMove(u8 line, u8 column, u8 mustJump, jump* path);
 move* PushNewMove(move* allNewMoves, move* newMove);
 move* ComputeFutureMoves(u8 currentLine, u8 currentColumn, u8 oldLine, u8 oldColumn, u8 type, u8 currentPlayer, u8 mustJump, pawn** pChessboard);
-void  FreeLinkedListMoves(move* allNewMoves);
-void  FreeLinkedListJumps(jump* path);
+void  FreeLinkedListMoves(move** allNewMoves);
+void  FreeLinkedListJumps(jump** path);
 /* game logic */
 pawn* InitPawn(u8 type, u8 line, u8 column, u8 player, u8 pawnId);
 void  FreePlayerPawns(pawn** pPawns);

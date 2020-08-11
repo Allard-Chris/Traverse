@@ -17,6 +17,7 @@ int main(int argc, char **argv) {
 /* the real main behind the main */
 void RunningApp(GtkApplication *app, gpointer user_data) {
   /***** START GTK Init *****/
+  setvbuf(stdout, NULL, _IONBF, 0);
   /* create GTK windows */
   window = gtk_application_window_new(app);
   gtk_window_set_title(GTK_WINDOW(window), "Traverse");
@@ -163,7 +164,8 @@ void ResetGameLogicVariables() {
   currentLine = 0;
   currentRound = 1;
   currentColumn = 0;
-  selectPawn = NULL;
+  selectPlayerPawn = NULL;
+  gameState = WAIT_PAWN;
 
   /* init player1 pawns */
   pPawnsPlayer1[0] = InitPawn(0, PLAYER1_BASE, 1, PLAYER1, 0);
@@ -233,23 +235,31 @@ gboolean GameLogic(GtkWidget *widget, GdkEventMotion *event, gpointer data) {
   /* draw all pawns for each player */
   DrawPawns(widget, pChessboard);
 
+  /* a pawn is currently selected */
+  if (selectPlayerPawn != NULL){
+     /* Draw circle on this pawn */
+    DrawCircle(widget, selectPlayerPawn->pos.line, selectPlayerPawn->pos.column, PLAYERS_COLOR[selectPlayerPawn->player]);
+    if (allNewMoves != NULL){
+      tmp = allNewMoves;
+      /* draw possible new moves */
+      while (tmp != NULL) {
+        DrawCell(widget, tmp->newPos.line, tmp->newPos.column, PLAYERS_COLOR[selectPlayerPawn->player]);
+        tmp = tmp->pNextMove;
+      }
+    }
+  }
+
+  /* start a new round */
+  if (gameState == NEW_MOVE){
+    /***** CHANGE CURRENT PLAYER FOR NEXT ROUND *****/
+    currentPlayer = (currentPlayer + 1) % nbPlayers;
+    currentRound++;
+    gameState = WAIT_PAWN;
+  }
+
   /* update status bar */
   UpdateStatusBar(statusBar, currentPlayer, currentRound);
 
-  /* if the current players clic on one of his pawn */
-  if (selectPawn != NULL){
-     /* Draw circle on this pawn */
-    DrawCircle(widget, selectPawn->pos.line, selectPawn->pos.column, PLAYERS_COLOR[selectPawn->player]);
-     /* Compute futurs moves for this pawn */
-    allNewMoves = ComputeFutureMoves(currentLine, currentColumn, OUT_OF_BOUND, OUT_OF_BOUND, currentType, currentPlayer, FALSE, pChessboard);
-    tmp = allNewMoves;
-    /* draw possible new moves */
-    while (tmp != NULL) {
-      DrawCell(widget, tmp->newPos.line, tmp->newPos.column, PLAYERS_COLOR[selectPawn->player]);
-      tmp = tmp->pNextMove;
-    }
-    FreeLinkedListMoves(allNewMoves);
-  }
   return TRUE;
 }
 
@@ -303,24 +313,73 @@ gboolean ConfigureSurface(GtkWidget *widget, GdkEventConfigure *event, gpointer 
 }
 
 /* event when clic on chessboard */
-/* clic on empty celm = do nothing */
+/* clic on empty cell = do nothing */
 gboolean EventClickOnBoard(GtkWidget *widget, GdkEventButton *event) {
   u8 mouseCellX = 0;
   u8 mouseCellY = 0;
+  u8 isNewMove  = 0;
   GetMouseToCell(event->x, event->y, &mouseCellX, &mouseCellY);
+  pawn* clickedCell = pChessboard[(mouseCellY * CHESSBOARD_SIZE) + mouseCellX];
 
   /* left clic */
   if (event->button == 1) {
-    /* if the first boolean check is false, we dont check the second one, so no segmentation fault */
-    /* so the order of arguments inside the if statement are important */
-    if ((pChessboard[(mouseCellY * CHESSBOARD_SIZE) + mouseCellX] == NULL) ||
-          (pChessboard[(mouseCellY * CHESSBOARD_SIZE) + mouseCellX]->player != currentPlayer)) {
-      selectPawn = NULL;
-    } else {
-      selectPawn = pChessboard[(mouseCellY * CHESSBOARD_SIZE) + mouseCellX];
-      currentType = pChessboard[(mouseCellY * CHESSBOARD_SIZE) + mouseCellX]->type;
-      currentLine = pChessboard[(mouseCellY * CHESSBOARD_SIZE) + mouseCellX]->pos.line;
-      currentColumn = pChessboard[(mouseCellY * CHESSBOARD_SIZE) + mouseCellX]->pos.column;
+
+    /* WAIT FOR PAWN */
+    if (gameState == WAIT_PAWN){
+      /* must clic on current player's pawn */
+      if ((clickedCell != NULL) && (clickedCell->player == currentPlayer)) { /* order is important, sacrebleu!*/
+        gameState = PAWN_SELECTED;
+        selectPlayerPawn = clickedCell;
+        currentType = selectPlayerPawn->type;
+        currentLine = selectPlayerPawn->pos.line;
+        currentColumn = selectPlayerPawn->pos.column;
+        allNewMoves = ComputeFutureMoves(currentLine, currentColumn, OUT_OF_BOUND, OUT_OF_BOUND, currentType, currentPlayer, FALSE, pChessboard);
+      }
+    }
+
+    /* PAWN ALREADY SELECTED */
+    else if (gameState == PAWN_SELECTED) {
+
+      /* click on one of our pawn */
+      if ((clickedCell != NULL) && (clickedCell->player == currentPlayer)) {
+        selectPlayerPawn = clickedCell;
+        currentType = selectPlayerPawn->type;
+        currentLine = selectPlayerPawn->pos.line;
+        currentColumn = selectPlayerPawn->pos.column;
+        FreeLinkedListMoves(&allNewMoves);
+        allNewMoves = ComputeFutureMoves(currentLine, currentColumn, OUT_OF_BOUND, OUT_OF_BOUND, currentType, currentPlayer, FALSE, pChessboard);
+      }
+      /* check if click on null or another player's pawn */
+      else if ((clickedCell != NULL) && (clickedCell->player != currentPlayer)) {
+        selectPlayerPawn = NULL;
+        gameState = WAIT_PAWN;
+        FreeLinkedListMoves(&allNewMoves);
+      }
+      /* check if clicked on future new moves */
+      else if (clickedCell == NULL) {
+        tmp = allNewMoves;
+        /* draw possible new moves */
+        while (tmp != NULL) {
+          if ((tmp->newPos.line == mouseCellY) && (tmp->newPos.column == mouseCellX)){
+            gameState = NEW_MOVE;
+            isNewMove = 1;
+            /* move to the new position */
+            pPlayersPawns[currentPlayer][selectPlayerPawn->pawnId]->pos.column = tmp->newPos.column;
+            pPlayersPawns[currentPlayer][selectPlayerPawn->pawnId]->pos.line = tmp->newPos.line;
+            pChessboard[(tmp->newPos.line * CHESSBOARD_SIZE) + tmp->newPos.column] = pPlayersPawns[currentPlayer][selectPlayerPawn->pawnId];
+            /* clear the old position */
+            pChessboard[(currentLine * CHESSBOARD_SIZE) + currentColumn] = NULL;
+            selectPlayerPawn = NULL;
+            FreeLinkedListMoves(&allNewMoves);
+          }
+          tmp = tmp->pNextMove;
+        }
+        if (isNewMove == FALSE) {
+          selectPlayerPawn = NULL;
+          gameState = WAIT_PAWN;
+          FreeLinkedListMoves(&allNewMoves);
+        }
+      }
     }
   }
 
