@@ -21,15 +21,16 @@ GtkWidget* dialogAbout;
 GtkWidget* dialogRules;
 
 /* globals pointers for game logic */
-pawn **pChessboard;    /* like the real life, a cell on a chessboard can be empty or with a pawn on it */
-pawn ***pPlayersPawns; /* Array of address of each players */
-pawn **pPawnsPlayer1;  /* Array of address of each player1's pawns */
-pawn **pPawnsPlayer2;  /* Array of address of each player2's pawns */
-pawn **pPawnsPlayer3;  /* Array of address of each player3's pawns */
-pawn **pPawnsPlayer4;  /* Array of address of each player4's pawns */
-pawn *selectPlayerPawn;      /* address of the current selected pawn */
-move *allNewMoves;
-move *tmp;
+pawn**  pChessboard;    /* like the real life, a cell on a chessboard can be empty or with a pawn on it */
+pawn*** pPlayersPawns; /* Array of address of each players */
+pawn**  pPawnsPlayer1;  /* Array of address of each player1's pawns */
+pawn**  pPawnsPlayer2;  /* Array of address of each player2's pawns */
+pawn**  pPawnsPlayer3;  /* Array of address of each player3's pawns */
+pawn**  pPawnsPlayer4;  /* Array of address of each player4's pawns */
+pawn*   selectPlayerPawn;      /* address of the current selected pawn */
+move*   allNewMoves;
+move*   pTmpMove;
+jump*   pTmpJump;
 
 /* global variables for game logic */
 u8 nbPlayers;
@@ -53,6 +54,8 @@ void UpdateStatusBar(GtkWidget* statusBar, u8 currentPlayer, u8 currentRound);
 void ResetGameLogicVariables();
 void AllocGameVariables();
 void UpdateStatusBar(GtkWidget* statusBar, u8 currentPlayer, u8 currentRound);
+void WaitPawnProcess();
+void NewPawnSelectedProcess(pawn* selectedPawn);
 void AboutMessage();
 void RulesMessage();
 void QuitGame();

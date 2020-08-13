@@ -219,7 +219,6 @@ move* ComputeFutureMoves(u8 currentLine, u8 currentColumn, u8 oldLine, u8 oldCol
       {{0, -1},  {TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, TRUE}}  /* left */
   };
 
-  printf("\n");
   /* do we need to jump to move ? */
   if (mustJump == FALSE) {
     for (u8 i = 0; i < 8; i++) { /* for all neighbours around this cell */
@@ -258,7 +257,7 @@ move* ComputeFutureMoves(u8 currentLine, u8 currentColumn, u8 oldLine, u8 oldCol
         /* only test if it's not our old position, to avoid infinite compute */
         /* only test jumpedNeighbours, if our neighbourCell if full */
         if (((jumpedNeighbourLine != oldLine) || (jumpedNeighbourColumn != oldColumn)) && (neighbourTypeOfCell == IS_FULL)) {
-          if ((jumpedNeighbourTypeOfCell != IS_OUT_OF_BOUND) && (jumpedNeighbourTypeOfCell == IS_EMPTY)) {
+          if ((jumpedNeighbourTypeOfCell != IS_OUT_OF_BOUND) && ((jumpedNeighbourTypeOfCell == IS_EMPTY) || (jumpedNeighbourTypeOfCell == IS_IN_GOAL))) {
             /* Ok check chained jumps */
             tmpNewMoves = ComputeFutureMoves(jumpedNeighbourLine, jumpedNeighbourColumn, currentLine, currentColumn, type, currentPlayer, TRUE, pChessboard);
             if (tmpNewMoves != NULL) {

@@ -14,6 +14,7 @@ const color CHESSBOARD_COLOR[CHESSBOARD_SIZE][CHESSBOARD_SIZE] = {
     {GREY_DARK,    RED_LIGHT,  RED_DARK,   RED_LIGHT,  RED_DARK,   RED_LIGHT,  RED_DARK,   RED_LIGHT,  RED_DARK,   GREY_LIGHT}};
 
 const color PLAYERS_COLOR[4] = {PLAYER1_COLOR, PLAYER2_COLOR, PLAYER3_COLOR, PLAYER4_COLOR};
+const color PLAYERS_PATH_COLOR[4] = {PLAYER1_PATH_COLOR, PLAYER2_PATH_COLOR, PLAYER3_PATH_COLOR, PLAYER4_PATH_COLOR};
 
 /* array of png data used to draw pawns */
 /* they are 4 differents png for each player's pawn */
@@ -114,7 +115,7 @@ void DrawPawns(GtkWidget* widget, pawn** pChessboard) {
     }
   }
   cairo_destroy(cr);
-  gtk_widget_queue_draw_area(widget, 0, 0, (CELL_SIZE * 10), (CELL_SIZE * 10));
+  gtk_widget_queue_draw_area(widget, 0, 0, (CELL_SIZE * CHESSBOARD_SIZE), (CELL_SIZE * CHESSBOARD_SIZE));
 }
 
 /* draw circle around the current selected pawn */
@@ -136,6 +137,25 @@ void DrawChessboardCells(GtkWidget* widget) {
       DrawCell(widget, line, column, CHESSBOARD_COLOR[line][column]);
     }
   }
+}
+
+void DrawCellLine(GtkWidget* widget, u8 cellX1, u8 cellY1, u8 cellX2, u8 cellY2, color currentColor) {
+  cairo_t* cr = cairo_create(G_SURFACE);
+  cairo_set_antialias (cr, CAIRO_ANTIALIAS_NONE); /* no antialias, to draw on pixel perfect line  */
+
+  /* paint to the surface, where we store our state */
+  //cairo_set_line_join(cr, CAIRO_LINE_JOIN_MITER);
+  cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+  cairo_set_line_width(cr, PATH_LINE_SIZE);
+
+  /* color cells in terms of */
+  cairo_set_source_rgb(cr, currentColor.r, currentColor.g, currentColor.b);
+  cairo_move_to(cr, ((cellX1 * CELL_SIZE) + HALF_CELL_SIZE), ((cellY1 * CELL_SIZE) + HALF_CELL_SIZE));
+  cairo_line_to(cr, ((cellX2 * CELL_SIZE) + HALF_CELL_SIZE), ((cellY2 * CELL_SIZE) + HALF_CELL_SIZE));
+  cairo_stroke(cr);
+
+  /* Now invalidate the affected region of the drawing area */
+  gtk_widget_queue_draw_area(widget, 0, 0, (CELL_SIZE * CHESSBOARD_SIZE), (CELL_SIZE * CHESSBOARD_SIZE));
 }
 
 /* draw single cell */
@@ -172,5 +192,5 @@ void DrawCell(GtkWidget* widget, u8 line, u8 column, color currentColor) {
   cairo_destroy(cr);
 
   /* Now invalidate the affected region of the drawing area */
-  gtk_widget_queue_draw_area(widget, 0, 0, (CELL_SIZE * 10), (CELL_SIZE * 10));
+  gtk_widget_queue_draw_area(widget, 0, 0, (CELL_SIZE * CHESSBOARD_SIZE), (CELL_SIZE * CHESSBOARD_SIZE));
 }

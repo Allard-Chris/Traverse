@@ -21,6 +21,7 @@
 #define CELL_BORDER_SIZE 1
 #define CELL_BORDER_UP_COLOR 1
 #define CELL_BORDER_DOWN_COLOR 0.4
+#define PATH_LINE_SIZE 10
 
 /* Cells colors */
 #define GREY_DARK     {0.8, 0.8, 0.8}
@@ -37,6 +38,10 @@
 #define PLAYER2_COLOR {0.4, 0.4, 1.0}
 #define PLAYER3_COLOR {0.4, 1.0, 0.1}
 #define PLAYER4_COLOR {1.0, 0.8, 0.2}
+#define PLAYER1_PATH_COLOR {0.8, 0.0, 0.0}
+#define PLAYER2_PATH_COLOR {0.2, 0.2, 0.8}
+#define PLAYER3_PATH_COLOR {0.2, 0.7, 0.0}
+#define PLAYER4_PATH_COLOR {1.0, 0.6, 0.0}
 
 /* external array png image for pawn */
 /* i want to compile png images inside final binarie and link this data here */
@@ -74,6 +79,7 @@ typedef struct {
 /* constant array */
 extern const color      CHESSBOARD_COLOR[CHESSBOARD_SIZE][CHESSBOARD_SIZE]; /* each cell of the chessboard has a constant color */
 extern const color      PLAYERS_COLOR[4]; /* constant color for each player */
+extern const color      PLAYERS_PATH_COLOR[4]; /* constant color for each player */
 extern cairo_surface_t* PAWN_IMAGES[4][7]; /* array where there is surface of each pawn which we must to draw */
 extern cairo_surface_t* G_SURFACE; /* global surface where we render the game */
 
@@ -88,4 +94,5 @@ void             DrawPawns(GtkWidget* widget, pawn** pChessboard);
 void             DrawChessboardCells(GtkWidget* widget);
 void             DrawCell(GtkWidget* widget, u8 line, u8 column, color currentColor);
 void             DrawCircle(GtkWidget* widget, u8 line, u8 column, color currentColor);
+void             DrawCellLine(GtkWidget* widget, u8 cellX1, u8 cellY1, u8 cellX2, u8 cellY2, color currentColor);
 #endif /* _HEADER_TRAVERSE_GTK_H */
