@@ -1,7 +1,7 @@
 #ifndef _HEADER_UTILS_H
 #define _HEADER_UTILS_H
 
-/* imports libs */
+// imports libs
 #include <errno.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
@@ -13,25 +13,19 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-/* type */
+// type
 typedef unsigned char u8;
+typedef signed char s8;
 
-/* constants */
-#define MAX_DIGITS 3
-#define SAVES_FOLDER "/.cache/traverse/"
+// constants
+#define MAX_DIGITS     3
+#define SAVES_FOLDER   "/.cache/traverse/"
+#define INDEX_2D(x, y) ((y * CHESSBOARD_SIZE) + x)
+#define INDEX_4D(x1, y1, x2, y2)                                        \
+        (x1 + (y1 * CHESSBOARD_SIZE)                                    \
+        + (x2 * CHESSBOARD_SIZE * CHESSBOARD_SIZE)                      \
+        + (y2 * CHESSBOARD_SIZE * CHESSBOARD_SIZE * CHESSBOARD_SIZE));
 
 extern const char* ITOA[10];
 
-/* used with the libxml */
-void GetXmlVariableByName(xmlNode* rootNode, const char* variable, u8* result);
-void GetXmlPlayerNode(xmlNode* rootNode, xmlNode** result, u8 playerId);
-void GetXmlPawnPositions(xmlNode* playerNode, u8 pawnId, u8* line, u8* column);
-xmlNodePtr SetXmlVariable(const char* propName, const char* propValue, char* varName, u8 varValue);
-
-/* From David Egan */
-/* Use it to be sure that the user give us an integer via stdin */
-/* https://dev-notes.eu/2019/05/Integer-Input-in-C/ */
-void ClearInputBuffer();
-void GetIntegerFromStdin(u8* inputInteger);
-
-#endif /* _UTILS_TRAVERSE_H */
+#endif // _UTILS_TRAVERSE_H

@@ -1,6 +1,9 @@
 #include "traverse_gtk.h"
 
-/* each cell of the chessboard has a constant color */
+// each cell of the chessboard has a constant color
+// clang-format off
+const color PLAYERS_COLOR[4] = {PLAYER1_COLOR, PLAYER2_COLOR, PLAYER3_COLOR, PLAYER4_COLOR};
+const color PLAYERS_PATH_COLOR[4] = {PLAYER1_PATH_COLOR, PLAYER2_PATH_COLOR, PLAYER3_PATH_COLOR, PLAYER4_PATH_COLOR};
 const color CHESSBOARD_COLOR[CHESSBOARD_SIZE][CHESSBOARD_SIZE] = {
     {GREY_LIGHT,   BLUE_DARK,  BLUE_LIGHT, BLUE_DARK,  BLUE_LIGHT, BLUE_DARK,  BLUE_LIGHT, BLUE_DARK,  BLUE_LIGHT, GREY_DARK},
     {GREEN_DARK,   GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  YELLOW_LIGHT},
@@ -12,20 +15,18 @@ const color CHESSBOARD_COLOR[CHESSBOARD_SIZE][CHESSBOARD_SIZE] = {
     {GREEN_DARK,   GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  YELLOW_LIGHT},
     {GREEN_LIGHT,  GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, GREY_DARK,  GREY_LIGHT, YELLOW_DARK},
     {GREY_DARK,    RED_LIGHT,  RED_DARK,   RED_LIGHT,  RED_DARK,   RED_LIGHT,  RED_DARK,   RED_LIGHT,  RED_DARK,   GREY_LIGHT}};
+// clang-format on
 
-const color PLAYERS_COLOR[4] = {PLAYER1_COLOR, PLAYER2_COLOR, PLAYER3_COLOR, PLAYER4_COLOR};
-const color PLAYERS_PATH_COLOR[4] = {PLAYER1_PATH_COLOR, PLAYER2_PATH_COLOR, PLAYER3_PATH_COLOR, PLAYER4_PATH_COLOR};
-
-/* array of png data used to draw pawns */
-/* they are 4 differents png for each player's pawn */
-/* the first index is player's id */
-/* the second index is pawn type for this player */
-/* the second index is correlated with pawns type */
-/* the pawn index 2, 3, 4 and 5 used the same pawn (triangle) */
+// array of png data used to draw pawns
+// they are 4 differents png for each player's pawn
+// the first index is player's id
+// the second index is pawn type for this player
+// the second index is correlated with pawns type
+// the pawn index 2, 3, 4 and 5 used the same pawn (triangle)
 cairo_surface_t* PAWN_IMAGES[MAX_NB_PLAYER][NB_PAWNS_TYPE];
 
-/* read_t function to take every byte from array to be push into stream */
-/* data come from PNG file (8bit per pixel RGBA) converted into binary array by ld at compile time */
+// read_t function to take every byte from array to be push into stream
+// data come from PNG file (8bit per pixel RGBA) converted into binary array by ld at compile time
 cairo_status_t cairo_read_png_from_array(void* closure, u8* data, unsigned int length) {
   cairo_read_png_closure_t* c = (cairo_read_png_closure_t*)(closure);
   memcpy(data, &c->data[c->last], length);
@@ -33,7 +34,7 @@ cairo_status_t cairo_read_png_from_array(void* closure, u8* data, unsigned int l
   return CAIRO_STATUS_SUCCESS;
 }
 
-/* create cairo surface from png stream */
+// create cairo surface from png stream
 cairo_surface_t* cairo_surface_from_png_data(u8* data) {
   cairo_surface_t*         surface;
   cairo_read_png_closure_t closure;
@@ -43,13 +44,13 @@ cairo_surface_t* cairo_surface_from_png_data(u8* data) {
   return surface;
 }
 
-/* get on wich cell is the mouse on */
-void GetMouseToCell(gdouble mX, gdouble mY, u8* mouseCellX, u8* mouseCellY) {
-  *mouseCellX = ((int)(mX)) / CELL_SIZE;
-  *mouseCellY = ((int)(mY)) / CELL_SIZE;
+// get on wich cell is the mouse on
+void GetMouseToCellPosition(gdouble mX, gdouble mY, u8* cX, u8* cY) {
+  *cX = ((int)(mX)) / CELL_SIZE;
+  *cY = ((int)(mY)) / CELL_SIZE;
 }
 
-/* clear cairo surface */
+// clear cairo surface
 void ClearSurface() {
   cairo_t* cr = cairo_create(G_SURFACE);
   cairo_set_source_rgb(cr, 1, 1, 1);
@@ -57,7 +58,7 @@ void ClearSurface() {
   cairo_destroy(cr);
 }
 
-/* Load all PNG images for each pawn for each player */
+// Load all PNG images for each pawn for each player
 void LoadPNGSurface() {
   PAWN_IMAGES[0][0] = cairo_surface_from_png_data((u8*)&_binary_src_assets_p1s_png_start);
   PAWN_IMAGES[0][1] = cairo_surface_from_png_data((u8*)&_binary_src_assets_p1t_png_start);
@@ -89,27 +90,27 @@ void LoadPNGSurface() {
   PAWN_IMAGES[3][6] = cairo_surface_from_png_data((u8*)&_binary_src_assets_p4c_png_start);
 }
 
-/* call at the end to deletre all cairo_surface_t */
+// call at the end to deletre all cairo_surface_t
 void FreePNGSurface() {
-  for (unsigned int i = 0; i < MAX_NB_PLAYER; i++){
-    for (unsigned int j = 0; j < NB_PAWNS_TYPE; j++){
+  for (unsigned int i = 0; i < MAX_NB_PLAYER; i++) {
+    for (unsigned int j = 0; j < NB_PAWNS_TYPE; j++) {
       cairo_surface_destroy(PAWN_IMAGES[i][j]);
     }
   }
 }
 
-/* draw all pawns */
+// draw all pawns
 void DrawPawns(GtkWidget* widget, pawn** pChessboard) {
-  cairo_t*  cr = cairo_create(G_SURFACE);
-  u8        playerId = 0;
-  u8        pawnType = 0;
+  cairo_t* cr = cairo_create(G_SURFACE);
+  u8       playerId = 0;
+  u8       pawnType = 0;
 
   for (u8 line = 0; line < CHESSBOARD_SIZE; line++) {
     for (u8 column = 0; column < CHESSBOARD_SIZE; column++) {
       if (pChessboard[(line * CHESSBOARD_SIZE) + column] != NULL) {
-        playerId = pChessboard[(line * CHESSBOARD_SIZE) + column]->player;
-        pawnType = pChessboard[(line * CHESSBOARD_SIZE) + column]->type;
-        cairo_set_source_surface(cr, PAWN_IMAGES[playerId][pawnType], (column * 50) + 1 , (line *50) + 1);
+        playerId = pChessboard[INDEX_2D(column, line)]->playerId;
+        pawnType = pChessboard[INDEX_2D(column, line)]->type;
+        cairo_set_source_surface(cr, PAWN_IMAGES[playerId][pawnType], (column * 50) + 1, (line * 50) + 1);
         cairo_paint(cr);
       }
     }
@@ -118,70 +119,71 @@ void DrawPawns(GtkWidget* widget, pawn** pChessboard) {
   gtk_widget_queue_draw_area(widget, 0, 0, (CELL_SIZE * CHESSBOARD_SIZE), (CELL_SIZE * CHESSBOARD_SIZE));
 }
 
-/* draw circle around the current selected pawn */
+// draw circle around the current selected pawn
 void DrawCircle(GtkWidget* widget, u8 line, u8 column, color currentColor) {
   cairo_t* cr = cairo_create(G_SURFACE);
   cairo_set_line_width(cr, 2);
   cairo_set_source_rgb(cr, currentColor.r, currentColor.g, currentColor.b);
-  cairo_arc(cr, ((column * CELL_SIZE) + HALF_CELL_SIZE), ((line * CELL_SIZE) + HALF_CELL_SIZE), HALF_CELL_SIZE - 1, 0, 2 * M_PI);
+  cairo_arc(cr, ((column * CELL_SIZE) + HALF_CELL_SIZE), ((line * CELL_SIZE) + HALF_CELL_SIZE), HALF_CELL_SIZE - 1, 0,
+            2 * M_PI);
   cairo_stroke_preserve(cr);
   cairo_destroy(cr);
   gtk_widget_queue_draw_area(widget, 0, 0, (CELL_SIZE * 10), (CELL_SIZE * 10));
 }
 
-/* Draw chessboard background */
-void DrawChessboardCells(GtkWidget* widget) {
-  for (u8 line = 0; line < CHESSBOARD_SIZE; line++) { /* line loop */
-    for (u8 column = 0; column < CHESSBOARD_SIZE; column++) { /* column loop */
-      /* color cells in terms of */
+// Draw chessboard background
+void DrawChessboard(GtkWidget* widget) {
+  for (u8 line = 0; line < CHESSBOARD_SIZE; line++) {         // line loop
+    for (u8 column = 0; column < CHESSBOARD_SIZE; column++) { // column loop
+      // color cells in terms of
       DrawCell(widget, line, column, CHESSBOARD_COLOR[line][column]);
     }
   }
 }
 
-void DrawCellLine(GtkWidget* widget, u8 cellX1, u8 cellY1, u8 cellX2, u8 cellY2, color currentColor) {
+void DrawCellPath(GtkWidget* widget, u8 cx1, u8 cy1, u8 cx2, u8 cy2, color currentColor) {
   cairo_t* cr = cairo_create(G_SURFACE);
-  cairo_set_antialias (cr, CAIRO_ANTIALIAS_NONE); /* no antialias, to draw on pixel perfect line  */
+  cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE); // no antialias, to draw on pixel perfect line
 
-  /* paint to the surface, where we store our state */
-  //cairo_set_line_join(cr, CAIRO_LINE_JOIN_MITER);
+  // paint to the surface, where we store our state
   cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
   cairo_set_line_width(cr, PATH_LINE_SIZE);
 
-  /* color cells in terms of */
+  // color cells in terms of
   cairo_set_source_rgb(cr, currentColor.r, currentColor.g, currentColor.b);
-  cairo_move_to(cr, ((cellX1 * CELL_SIZE) + HALF_CELL_SIZE), ((cellY1 * CELL_SIZE) + HALF_CELL_SIZE));
-  cairo_line_to(cr, ((cellX2 * CELL_SIZE) + HALF_CELL_SIZE), ((cellY2 * CELL_SIZE) + HALF_CELL_SIZE));
+  cairo_move_to(cr, ((cx1 * CELL_SIZE) + HALF_CELL_SIZE), ((cy1 * CELL_SIZE) + HALF_CELL_SIZE));
+  cairo_line_to(cr, ((cx2 * CELL_SIZE) + HALF_CELL_SIZE), ((cy2 * CELL_SIZE) + HALF_CELL_SIZE));
   cairo_stroke(cr);
 
-  /* Now invalidate the affected region of the drawing area */
+  // Now invalidate the affected region of the drawing area
   gtk_widget_queue_draw_area(widget, 0, 0, (CELL_SIZE * CHESSBOARD_SIZE), (CELL_SIZE * CHESSBOARD_SIZE));
 }
 
-/* draw single cell */
+// draw single cell
 void DrawCell(GtkWidget* widget, u8 line, u8 column, color currentColor) {
   cairo_t* cr = cairo_create(G_SURFACE);
-  cairo_set_antialias (cr, CAIRO_ANTIALIAS_NONE); /* no antialias, to draw on pixel perfect line  */
+  cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE); // no antialias, to draw on pixel perfect line
 
-  /* paint to the surface, where we store our state */
+  // paint to the surface, where we store our state
   cairo_set_line_join(cr, CAIRO_LINE_JOIN_MITER);
   cairo_set_line_width(cr, CELL_BORDER_SIZE);
 
-  /* color cells in terms of */
+  // color cells in terms of
   cairo_set_source_rgb(cr, currentColor.r, currentColor.g, currentColor.b);
 
-  /* draw cell background */
+  // draw cell background
   cairo_rectangle(cr, (column * CELL_SIZE), (line * CELL_SIZE), CELL_SIZE, CELL_SIZE);
   cairo_fill(cr);
 
-  /* draw border down */
+  // draw border down
   cairo_set_source_rgb(cr, CELL_BORDER_DOWN_COLOR, CELL_BORDER_DOWN_COLOR, CELL_BORDER_DOWN_COLOR);
   cairo_move_to(cr, (column * CELL_SIZE), ((line * CELL_SIZE) + (CELL_SIZE - 0.5)));
   cairo_line_to(cr, ((column * CELL_SIZE) + (CELL_SIZE + 0.5)), ((line * CELL_SIZE) + (CELL_SIZE - 0.5)));
   cairo_move_to(cr, ((column * CELL_SIZE) + (CELL_SIZE - 0.5)), ((line * CELL_SIZE) + (CELL_SIZE + 0.5)));
   cairo_line_to(cr, ((column * CELL_SIZE) + (CELL_SIZE - 0.5)), ((line * CELL_SIZE)));
   cairo_stroke(cr);
-  /* draw border up */
+
+  // draw border up
   cairo_set_source_rgb(cr, CELL_BORDER_UP_COLOR, CELL_BORDER_UP_COLOR, CELL_BORDER_UP_COLOR);
   cairo_move_to(cr, (column * CELL_SIZE) + 0.5, (line * CELL_SIZE) + 0.5);
   cairo_line_to(cr, ((column * CELL_SIZE) + CELL_SIZE), (line * CELL_SIZE));
@@ -191,6 +193,6 @@ void DrawCell(GtkWidget* widget, u8 line, u8 column, color currentColor) {
 
   cairo_destroy(cr);
 
-  /* Now invalidate the affected region of the drawing area */
+  // Now invalidate the affected region of the drawing area
   gtk_widget_queue_draw_area(widget, 0, 0, (CELL_SIZE * CHESSBOARD_SIZE), (CELL_SIZE * CHESSBOARD_SIZE));
 }
