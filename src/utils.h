@@ -15,16 +15,15 @@
 
 // type
 typedef unsigned char u8;
-typedef signed char s8;
+typedef signed char   s8;
 
 // constants
 #define MAX_DIGITS     3
 #define SAVES_FOLDER   "/.cache/traverse/"
 #define INDEX_2D(x, y) ((y * CHESSBOARD_SIZE) + x)
-#define INDEX_4D(x1, y1, x2, y2)                                        \
-        (x1 + (y1 * CHESSBOARD_SIZE)                                    \
-        + (x2 * CHESSBOARD_SIZE * CHESSBOARD_SIZE)                      \
-        + (y2 * CHESSBOARD_SIZE * CHESSBOARD_SIZE * CHESSBOARD_SIZE));
+#define INDEX_4D(x1, y1, x2, y2)                                                                                       \
+  (x1 + (y1 * CHESSBOARD_SIZE) + (x2 * CHESSBOARD_SIZE * CHESSBOARD_SIZE) +                                            \
+   (y2 * CHESSBOARD_SIZE * CHESSBOARD_SIZE * CHESSBOARD_SIZE))
 
 extern const char* ITOA[10];
 

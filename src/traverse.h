@@ -18,12 +18,6 @@
 #define PLAYER3_BASE 0
 #define PLAYER4_BASE 9
 
-// players goal
-#define PLAYER1_GOAL PLAYER2_BASE
-#define PLAYER2_GOAL PLAYER1_BASE
-#define PLAYER3_GOAL PLAYER4_BASE
-#define PLAYER4_GOAL PLAYER3_BASE
-
 // game constants
 #define CHESSBOARD_SIZE    10
 #define MAX_NB_PLAYER      4
@@ -55,9 +49,6 @@
 #define IS_EMPTY        3
 #define IS_FULL         4
 
-// constant array
-extern const int   PLAYER_GOALS[4];
-extern const char* PLAYERS_STR[4];
 // structures
 // position of a pawn
 typedef struct position {
@@ -93,6 +84,14 @@ typedef struct pawn {
   u8              pawnId;   // unique id
 } pawn;
 
+// constant array
+extern const char*     PLAYERS_STR[4];
+extern const position  PLAYER1_GOAL[NB_PAWNS];
+extern const position  PLAYER2_GOAL[NB_PAWNS];
+extern const position  PLAYER3_GOAL[NB_PAWNS];
+extern const position  PLAYER4_GOAL[NB_PAWNS];
+extern const position* PLAYERS_GOAL[MAX_NB_PLAYER];
+
 // functions
 // all for computes moves
 jump* CreateNewNump(u8 line, u8 column);
@@ -108,7 +107,11 @@ pawn* InitPawn(u8 type, u8 line, u8 column, u8 playerId, u8 pawnId);
 void  FreePlayerPawns(pawn** pPlayerPawns);
 void  ClearChessboard(pawn** pChessboard);
 void  UpdateChessboard(u8 nbPlayers, pawn*** pPlayersPawns, pawn** pChessboard);
+float GetPlayerScore(u8 playerId, pawn** pPawnsPlayer);
+float GetPlayerAverageDistance(u8 playerId, pawn** pPawnsPlayer, pawn** pChessboard, u8* sqrtDistanceTable);
+float GetChessboardScore(pawn*** pPlayersPawns, pawn** pChessboard, u8* sqrtDistanceTable);
 u8    GetNbMoves(u8 playerId, pawn** pPlayerPawns, pawn** pChessboard);
 u8    GetTypeOfCell(u8 line, u8 column, u8 playerId, pawn** pChessboard);
-
+u8    IsCellPlayerGoal(u8 playerId, u8 line, u8 column);
+u8*   ComputeSqrtDistanceTable();
 #endif // _HEADER_TRAVERSE_H

@@ -31,6 +31,7 @@ pawn*   selectPlayerPawn; // address of the current selected pawn
 move*   allNewMoves;
 move*   pTmpMove;
 jump*   pTmpJump;
+u8*     sqrtDistanceTable;
 
 // global variables for game logic
 u8 nbPlayers;

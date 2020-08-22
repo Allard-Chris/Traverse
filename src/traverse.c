@@ -1,8 +1,142 @@
 #include "traverse.h"
 
 // constant array
-const char* PLAYERS_STR[4] = {"Player 1", "Player 2", "Player 3", "Player 4"};
-const int   PLAYER_GOALS[4] = {PLAYER1_GOAL, PLAYER2_GOAL, PLAYER3_GOAL, PLAYER4_GOAL};
+// clang-format off
+const char *PLAYERS_STR[4] = {"Player 1", "Player 2", "Player 3", "Player 4"};
+const position PLAYER1_GOAL[NB_PAWNS] = {{0, 1}, {0, 2}, {0, 3}, {0, 4}, {0, 5}, {0, 6}, {0, 7}, {0, 8}};
+const position PLAYER2_GOAL[NB_PAWNS] = {{9, 1}, {9, 2}, {9, 3}, {9, 4}, {9, 5}, {9, 6}, {9, 7}, {9, 8}};
+const position PLAYER3_GOAL[NB_PAWNS] = {{1, 9}, {2, 9}, {3, 9}, {4, 9}, {5, 9}, {6, 9}, {7, 9}, {8, 9}};
+const position PLAYER4_GOAL[NB_PAWNS] = {{1, 0}, {2, 0}, {3, 0}, {4, 0}, {5, 0}, {6, 0}, {7, 0}, {8, 0}};
+const position *PLAYERS_GOAL[MAX_NB_PLAYER] = {PLAYER1_GOAL, PLAYER2_GOAL, PLAYER3_GOAL, PLAYER4_GOAL};
+// clang-format on
+
+// compute score with current pawns inside our goal
+// result between 0 and 1
+float GetPlayerScore(u8 playerId, pawn** pPawnsPlayer) {
+  float score = 0;
+  for (u8 pawnId = 0; pawnId < NB_PAWNS; pawnId++) {
+    for (u8 goalCell = 0; goalCell < NB_PAWNS; goalCell++) {
+      if ((PLAYERS_GOAL[playerId][goalCell].line == pPawnsPlayer[pawnId]->pos.line) &&
+          (PLAYERS_GOAL[playerId][goalCell].column == pPawnsPlayer[pawnId]->pos.column)) {
+        score++;
+      }
+    }
+  }
+  return (score / (float)NB_PAWNS);
+}
+
+// return TRUE: cell position is one of our goal
+u8 IsCellPlayerGoal(u8 playerId, u8 line, u8 column) {
+  for (u8 goalCell = 0; goalCell < NB_PAWNS; goalCell++) {
+    if ((PLAYERS_GOAL[playerId][goalCell].line == line) && (PLAYERS_GOAL[playerId][goalCell].column == column)) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+// return TRUE: pawn is inside our goal
+u8 IsPawnInsideGoal(u8 playerId, pawn* pawnPlayer) {
+  for (u8 goalCell = 0; goalCell < NB_PAWNS; goalCell++) {
+    if ((PLAYERS_GOAL[playerId][goalCell].line == pawnPlayer->pos.line) &&
+        (PLAYERS_GOAL[playerId][goalCell].column == pawnPlayer->pos.column)) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+// calculate the shortest distance between each pawn and their nearest goal
+// get an average distance for the player and his goal
+float GetPlayerAverageDistance(u8 playerId, pawn** pPawnsPlayer, pawn** pChessboard, u8* sqrtDistanceTable) {
+  u8  tmpAverageDistance[NB_PAWNS];
+  int averageDistance = 0;
+  u8  cLine = 0;
+  u8  cColumn = 0;
+  u8  dLine = 0;
+  u8  dColumn = 0;
+  u8  min = OUT_OF_BOUND;
+  for (u8 pawnId = 0; pawnId < NB_PAWNS; pawnId++) {
+    cLine = pPawnsPlayer[pawnId]->pos.line;
+    cColumn = pPawnsPlayer[pawnId]->pos.column;
+    // if the pawn is not already in a goal
+    if (IsPawnInsideGoal(playerId, pPawnsPlayer[pawnId]) == FALSE) {
+      // get distance between the current pawn and each cell goal
+      for (u8 cellGoal = 0; cellGoal < NB_PAWNS; cellGoal++) {
+        dLine = PLAYERS_GOAL[playerId][cellGoal].line;
+        dColumn = PLAYERS_GOAL[playerId][cellGoal].column;
+        if ((pChessboard[INDEX_2D(dColumn, dLine)] == NULL) ||
+            (pChessboard[INDEX_2D(dColumn, dLine)]->playerId != playerId)) {
+          tmpAverageDistance[cellGoal] = sqrtDistanceTable[INDEX_4D(cColumn, cLine, dColumn, dLine)];
+        } else {
+          tmpAverageDistance[cellGoal] = OUT_OF_BOUND;
+        }
+      }
+      // at the end, get the smallest distance
+      min = OUT_OF_BOUND;
+      for (u8 distance = 0; distance < NB_PAWNS; distance++) {
+        if (tmpAverageDistance[distance] < min) min = tmpAverageDistance[distance];
+      }
+      averageDistance += min;
+    }
+  }
+  return ((averageDistance / 81.0) / 8.0); // 162 = the max distance we can get between two pawns
+}
+
+// compute score for the global game
+// take the average distance of each player with their goal
+// take the current goal of their pawn inside goal
+// result between -1 and 1
+// the nearest we are from -1, the more CPU are currently winning
+// the nearest we are from 1, the more the player are currently winning
+// only for 1v1: CPU vs HUM, bored to do with 3 and 4 players
+float GetChessboardScore(pawn*** pPlayersPawns, pawn** pChessboard, u8* sqrtDistanceTable) {
+  float playersPawnsScore[2];
+  float playersDistanceScore[2];
+  float globalScore = 0.0;
+
+  // get pawn and distance score for each players
+  for (u8 cPlayer = 0; cPlayer < 2; cPlayer++) {
+    playersPawnsScore[cPlayer] = GetPlayerScore(cPlayer, pPlayersPawns[cPlayer]);
+    playersDistanceScore[cPlayer] =
+        1.0 - GetPlayerAverageDistance(cPlayer, pPlayersPawns[cPlayer], pChessboard, sqrtDistanceTable);
+  }
+
+  // global score = HUM score - CPU score.
+  // the pawn score count for 2/3 of the global score for a player
+  globalScore =
+      // score player
+      (((2 * playersPawnsScore[0]) + playersDistanceScore[0]) / 3) -
+      (((2 * playersPawnsScore[1]) + playersDistanceScore[1]) / 3);
+
+  return globalScore;
+}
+
+// calculate the distances of each cell between them
+// done one time at the beginning of the game
+u8* ComputeSqrtDistanceTable() {
+  u8* tmpSqrtDistanceTable =
+      (u8*)malloc((CHESSBOARD_SIZE * CHESSBOARD_SIZE * CHESSBOARD_SIZE * CHESSBOARD_SIZE) * sizeof(u8));
+  s8 dX = 0;
+  s8 dY = 0;
+  if (tmpSqrtDistanceTable == NULL) {
+    perror("Error: can't init new pawn. Exit.\n");
+    exit(-1);
+  }
+  for (u8 y1 = 0; y1 < CHESSBOARD_SIZE; y1++) {
+    for (u8 x1 = 0; x1 < CHESSBOARD_SIZE; x1++) {
+      for (u8 y2 = 0; y2 < CHESSBOARD_SIZE; y2++) {
+        for (u8 x2 = 0; x2 < CHESSBOARD_SIZE; x2++) {
+          dX = x2 - x1;
+          dY = y2 - y1;
+          // only the square is use, not the root square
+          tmpSqrtDistanceTable[INDEX_4D(x1, y1, x2, y2)] = (dX * dX) + (dY * dY);
+        }
+      }
+    }
+  }
+  return tmpSqrtDistanceTable;
+}
 
 // alloc new pawn
 pawn* InitPawn(u8 type, u8 line, u8 column, u8 playerId, u8 pawnId) {
@@ -142,11 +276,7 @@ u8 GetTypeOfCell(u8 line, u8 column, u8 playerId, pawn** pChessboard) {
       // the cell is in the edge of the chessboard
       if ((line == 0) || (line == 9) || (column == 0) || (column == 9)) typeOfCell = IS_IN_EDGE;
       // it is our goal ?
-      if ((playerId == PLAYER1) || (playerId == PLAYER2)) {
-        if (line == PLAYER_GOALS[playerId]) typeOfCell = IS_IN_GOAL;
-      } else {
-        if (column == PLAYER_GOALS[playerId]) typeOfCell = IS_IN_GOAL;
-      }
+      if (IsCellPlayerGoal(playerId, line, column) == TRUE) typeOfCell = IS_IN_GOAL;
     } else
       typeOfCell = IS_FULL;
   }

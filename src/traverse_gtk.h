@@ -80,10 +80,10 @@ typedef struct {
 
 // constant array
 extern const color      CHESSBOARD_COLOR[CHESSBOARD_SIZE][CHESSBOARD_SIZE]; // each cell has a constant color
-extern const color      PLAYERS_COLOR[4];         // constant color for each player
-extern const color      PLAYERS_PATH_COLOR[4];    // constant color for each player
-extern cairo_surface_t* PAWN_IMAGES[4][7];        // array where there is surface of each pawn which we must to draw
-extern cairo_surface_t* G_SURFACE;                // global surface where we render the game
+extern const color      PLAYERS_COLOR[4];                                   // constant color for each player
+extern const color      PLAYERS_PATH_COLOR[4];                              // constant color for each player
+extern cairo_surface_t* PAWN_IMAGES[4][7]; // array where there is surface of each pawn which we must to draw
+extern cairo_surface_t* G_SURFACE;         // global surface where we render the game
 
 // functions
 cairo_status_t   cairo_read_png_from_array(void* closure, u8* data, unsigned int length);

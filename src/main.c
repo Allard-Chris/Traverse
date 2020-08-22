@@ -125,6 +125,7 @@ void RunningApp(GtkApplication* app, gpointer user_data) {
 // do all memories alloc for game logic variables
 void AllocGameVariables() {
   pChessboard = malloc((CHESSBOARD_SIZE * CHESSBOARD_SIZE) * sizeof(pawn*));
+  sqrtDistanceTable = ComputeSqrtDistanceTable();
   pPlayersPawns = malloc(4 * sizeof(pawn**));
   pPawnsPlayer1 = malloc(NB_PAWNS * sizeof(pawn*));
   pPawnsPlayer2 = malloc(NB_PAWNS * sizeof(pawn*));
@@ -317,6 +318,7 @@ void QuitGame() {
   free(pPawnsPlayer4);
   free(pPlayersPawns);
   free(pChessboard);
+  free(sqrtDistanceTable);
 
   // remove global surface on which we draw the game
   cairo_surface_destroy(G_SURFACE);
