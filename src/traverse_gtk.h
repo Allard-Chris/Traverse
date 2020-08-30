@@ -37,7 +37,7 @@
 #define YELLOW_LIGHT        { 1.0, 1.0, 0.9 }
 #define PLAYER1_COLOR       { 1.0, 0.2, 0.2 }
 #define PLAYER2_COLOR       { 0.4, 0.4, 1.0 }
-#define PLAYER3_COLOR       { 0.4, 1.0, 0.1 }
+#define PLAYER3_COLOR       { 0.4, 0.8, 0.1 }
 #define PLAYER4_COLOR       { 1.0, 0.8, 0.2 }
 #define PLAYER1_PATH_COLOR  { 0.8, 0.0, 0.0 }
 #define PLAYER2_PATH_COLOR  { 0.2, 0.2, 0.8 }

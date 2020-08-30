@@ -42,12 +42,13 @@ void RunningApp(GtkApplication* app, gpointer user_data) {
   gtk_menu_item_set_submenu(GTK_MENU_ITEM(gameBarItem), gameMenu);
   gtk_menu_shell_append(GTK_MENU_SHELL(menuBar), gameBarItem);
   g_signal_connect(quitItem, "activate", G_CALLBACK(QuitGame), NULL);
+  g_signal_connect(newItem, "activate", G_CALLBACK(ResetGameLogicVariables), NULL);
 
   // playerMenu
   GtkWidget* playerMenu = gtk_menu_new();
   GtkWidget* playerBarItem = gtk_menu_item_new_with_label("Player");
   GSList*    playerRadioGroup = NULL;
-  GtkWidget* player2RadioItem = gtk_radio_menu_item_new_with_label(playerRadioGroup, "Player2");
+  player2RadioItem = gtk_radio_menu_item_new_with_label(playerRadioGroup, "Player2");
   playerRadioGroup = gtk_radio_menu_item_get_group(GTK_RADIO_MENU_ITEM(player2RadioItem));
   GtkWidget* player3RadioItem = gtk_radio_menu_item_new_with_label(playerRadioGroup, "Player3");
   GtkWidget* player4RadioItem = gtk_radio_menu_item_new_with_label(playerRadioGroup, "Player4");
@@ -65,7 +66,7 @@ void RunningApp(GtkApplication* app, gpointer user_data) {
   GtkWidget* difficultyMenu = gtk_menu_new();
   GtkWidget* difficultyBarItem = gtk_menu_item_new_with_label("Difficulty");
   GSList*    difficultyRadioGroup = NULL;
-  GtkWidget* humanRadioItem = gtk_radio_menu_item_new_with_label(difficultyRadioGroup, "VS Human");
+  humanRadioItem = gtk_radio_menu_item_new_with_label(difficultyRadioGroup, "VS Human");
   difficultyRadioGroup = gtk_radio_menu_item_get_group(GTK_RADIO_MENU_ITEM(humanRadioItem));
   GtkWidget* normalRadioItem = gtk_radio_menu_item_new_with_label(difficultyRadioGroup, "AI Normal");
   GtkWidget* hardRadioItem = gtk_radio_menu_item_new_with_label(difficultyRadioGroup, "AI Hard");
@@ -434,9 +435,13 @@ void EventDifficultyChanged(GtkWidget* radioMenuItem, gpointer data) {
       break;
     case 1:
       difficulty = 1;
+      nbPlayers = 2;
+      gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(player2RadioItem), TRUE);
       break;
     case 2:
       difficulty = 2;
+      nbPlayers = 2;
+      gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(player2RadioItem), TRUE);
       break;
     }
   }
@@ -454,9 +459,13 @@ void EventNbPlayersChanged(GtkWidget* radioMenuItem, gpointer data) {
       break;
     case 3:
       nbPlayers = 3;
+      difficulty = 0;
+      gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(humanRadioItem), TRUE);
       break;
     case 4:
       nbPlayers = 4;
+      difficulty = 0;
+      gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(humanRadioItem), TRUE);
       break;
     }
   }

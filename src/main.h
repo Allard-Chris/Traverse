@@ -19,6 +19,9 @@ cairo_surface_t* G_SURFACE;
 GtkWidget*       statusBar;
 GtkWidget*       dialogAbout;
 GtkWidget*       dialogRules;
+// widget for menu
+GtkWidget* humanRadioItem;
+GtkWidget* player2RadioItem;
 
 // globals pointers for game logic
 pawn**  pChessboard;      // like the real life, a cell on a chessboard can be empty or with a pawn on it
