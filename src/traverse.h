@@ -26,6 +26,8 @@
 #define OUT_OF_BOUND       254
 #define NB_PAWNS_TYPE      7
 #define NB_PAWNS           8
+#define CPU                1 // player number but easy to read inside code
+#define HUMAIN             0
 #ifndef FALSE
 #define FALSE 0
 #endif
@@ -84,6 +86,15 @@ typedef struct pawn {
   u8              pawnId;   // unique id
 } pawn;
 
+// use to store all score for CPU moves
+typedef struct aiMove {
+  float          score; // score for this move;
+  u8             pawnId;
+  u8             line;
+  u8             column;
+  struct aiMove* pNextAiMove;
+} aiMove;
+
 // constant array
 extern const char*     PLAYERS_STR[4];
 extern const position  PLAYER1_GOAL[NB_PAWNS];
@@ -94,7 +105,7 @@ extern const position* PLAYERS_GOAL[MAX_NB_PLAYER];
 
 // functions
 // all for computes moves
-jump* CreateNewNump(u8 line, u8 column);
+jump* CreateNewJump(u8 line, u8 column);
 jump* PushNewJump(jump* path, jump* newJump);
 move* CreateNewMove(u8 line, u8 column, u8 mustJump, jump* path);
 move* PushNewMove(move* allNewMoves, move* newMove);
@@ -102,16 +113,26 @@ move* ComputeFutureMoves(u8 cLine, u8 cColumn, u8 oLine, u8 oColumn, u8 type, u8
                          pawn** pChessboard);
 void  FreeLinkedListMoves(move** allNewMoves);
 void  FreeLinkedListJumps(jump** path);
+
+// all function for aiMove
+float   MinMax(pawn** pChessboard, u8 depth, u8 maximizingPlayer, pawn*** pPlayersPawns, u8 nbPlayers,
+               u8* sqrtDistanceTable);
+aiMove* CreateNewAiMove(float score, u8 pawnId, u8 line, u8 column);
+aiMove* PushNewAiMove(aiMove* allAiMove, aiMove* newAiMove);
+void    FreeLinkedAiMove(aiMove** aiMove);
+
 // game logic
 pawn* InitPawn(u8 type, u8 line, u8 column, u8 playerId, u8 pawnId);
 void  FreePlayerPawns(pawn** pPlayerPawns);
 void  ClearChessboard(pawn** pChessboard);
 void  UpdateChessboard(u8 nbPlayers, pawn*** pPlayersPawns, pawn** pChessboard);
+void  MovePawnOnChessboard(pawn** pChessboard, pawn*** pPlayersPawns, u8 player, u8 pawnId, u8 newColumn, u8 newLine);
 float GetPlayerScore(u8 playerId, pawn** pPawnsPlayer);
 float GetPlayerAverageDistance(u8 playerId, pawn** pPawnsPlayer, pawn** pChessboard, u8* sqrtDistanceTable);
 float GetChessboardScore(pawn*** pPlayersPawns, pawn** pChessboard, u8* sqrtDistanceTable);
 u8    GetNbMoves(u8 playerId, pawn** pPlayerPawns, pawn** pChessboard);
 u8    GetTypeOfCell(u8 line, u8 column, u8 playerId, pawn** pChessboard);
 u8    IsCellPlayerGoal(u8 playerId, u8 line, u8 column);
+s8    GameOver(u8 nbPlayer, pawn*** pPlayersPawns);
 u8*   ComputeSqrtDistanceTable();
 #endif // _HEADER_TRAVERSE_H

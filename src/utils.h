@@ -3,8 +3,6 @@
 
 // imports libs
 #include <errno.h>
-#include <libxml/parser.h>
-#include <libxml/tree.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -9,7 +9,7 @@
 #define GAME_STATUS_STR "GameStatus"
 #define WAIT_PAWN       0
 #define PAWN_SELECTED   1
-#define NEW_MOVE        2
+#define NEW_MOVE_DONE   2
 
 // globals widgets
 // must be accessed by all functions, so they are created on the heap
@@ -32,6 +32,8 @@ pawn**  pPawnsPlayer3;    // Array of address of each player3's pawns
 pawn**  pPawnsPlayer4;    // Array of address of each player4's pawns
 pawn*   selectPlayerPawn; // address of the current selected pawn
 move*   allNewMoves;
+aiMove* allAiMove;
+aiMove* tmpAiMove;
 move*   pTmpMove;
 jump*   pTmpJump;
 u8*     sqrtDistanceTable;

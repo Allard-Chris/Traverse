@@ -160,6 +160,8 @@ void ResetGameLogicVariables() {
 
   // reinit variables
   allNewMoves = NULL;
+  allAiMove = NULL;
+  tmpAiMove = NULL;
   pTmpMove = NULL;
   pTmpJump = NULL;
   currentPlayer = 0;
@@ -241,6 +243,48 @@ gboolean GameLogic(GtkWidget* widget, GdkEventMotion* event, gpointer data) {
   // draw all pawns for each player
   DrawPawns(widget, pChessboard);
 
+  //  // if CPU turn
+  //  if ((difficulty != 0) && (currentPlayer == CPU)) {
+  //
+  //    // Loop on each pawn, we want to test all possible new moves
+  //    for (u8 pawnId = 0; pawnId < NB_PAWNS; pawnId++) {
+  //      // compute future move for this pawn
+  //      currentLine = pPlayersPawns[CPU][pawnId]->pos.line;
+  //      currentColumn = pPlayersPawns[CPU][pawnId]->pos.column;
+  //      currentType = pPlayersPawns[CPU][pawnId]->type;
+  //      allNewMoves = ComputeFutureMoves(currentLine, currentColumn, OUT_OF_BOUND, OUT_OF_BOUND, currentType, CPU,
+  //      FALSE,
+  //                                       pChessboard);
+  //
+  //      // for all futures new moves
+  //      pTmpMove = allNewMoves;
+  //      while (pTmpMove != NULL) {
+  //        // move, temporary, this pawn to get the score about this move
+  //        MovePawnOnChessboard(pChessboard, pPlayersPawns, CPU, pawnId, pTmpMove->newPos.column,
+  //        pTmpMove->newPos.line);
+  //        // store the score of this new movement
+  //        allAiMove = PushNewAiMove(allAiMove, CreateNewAiMove(MinMax(pChessboard, difficulty, TRUE, pPlayersPawns,
+  //                                                                    nbPlayers, sqrtDistanceTable),
+  //                                                             pawnId, currentLine, currentColumn));
+  //        // moveback this pawn to his previous place
+  //        MovePawnOnChessboard(pChessboard, pPlayersPawns, CPU, pawnId, currentColumn, currentLine);
+  //        pTmpMove = pTmpMove->pNextMove;
+  //      }
+  //      FreeLinkedListMoves(&allNewMoves);
+  //    }
+  //    // keep the best one
+  //    tmpAiMove = allAiMove;
+  //    while (tmpAiMove != NULL) {
+  //      tmpAiMove = tmpAiMove->pNextAiMove;
+  //    }
+  //
+  //    FreeLinkedAiMove(&allAiMove);
+  //    // pour chaque pion, on bouge aléatoirement un de ceux qui a le plus gros score
+  //    gameState = NEW_MOVE_DONE;
+  //  }
+  //
+  //  // else Humain turn
+  //  else {
   // a pawn is currently selected
   if (selectPlayerPawn != NULL) {
     // Draw circle on this pawn
@@ -280,13 +324,15 @@ gboolean GameLogic(GtkWidget* widget, GdkEventMotion* event, gpointer data) {
       }
     }
   }
+  //  }
 
   // start a new round
-  if (gameState == NEW_MOVE) {
+  if (gameState == NEW_MOVE_DONE) {
     //***** CHANGE CURRENT PLAYER FOR NEXT ROUND *****
     currentPlayer = (currentPlayer + 1) % nbPlayers;
     currentRound++;
     gameState = WAIT_PAWN;
+    GameLogic(widget, NULL, NULL);
   }
 
   // update status bar
@@ -390,14 +436,10 @@ gboolean EventClickOnBoard(GtkWidget* widget, GdkEventButton* event) {
           if ((pTmpMove->newPos.line == mouseCellY) && (pTmpMove->newPos.column == mouseCellX)) {
             isNewMove = TRUE;
             // move to the new position
-            pPlayersPawns[currentPlayer][selectPlayerPawn->pawnId]->pos.column = pTmpMove->newPos.column;
-            pPlayersPawns[currentPlayer][selectPlayerPawn->pawnId]->pos.line = pTmpMove->newPos.line;
-            pChessboard[(pTmpMove->newPos.line * CHESSBOARD_SIZE) + pTmpMove->newPos.column] =
-                pPlayersPawns[currentPlayer][selectPlayerPawn->pawnId];
-            // clear the old position
-            pChessboard[(currentLine * CHESSBOARD_SIZE) + currentColumn] = NULL;
+            MovePawnOnChessboard(pChessboard, pPlayersPawns, currentPlayer, selectPlayerPawn->pawnId,
+                                 pTmpMove->newPos.column, pTmpMove->newPos.line);
             WaitPawnProcess();
-            gameState = NEW_MOVE;
+            gameState = NEW_MOVE_DONE;
           }
           pTmpMove = pTmpMove->pNextMove;
         }
@@ -439,7 +481,7 @@ void EventDifficultyChanged(GtkWidget* radioMenuItem, gpointer data) {
       gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(player2RadioItem), TRUE);
       break;
     case 2:
-      difficulty = 2;
+      difficulty = 3;
       nbPlayers = 2;
       gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(player2RadioItem), TRUE);
       break;

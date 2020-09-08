@@ -10,6 +10,44 @@ const position PLAYER4_GOAL[NB_PAWNS] = {{1, 0}, {2, 0}, {3, 0}, {4, 0}, {5, 0},
 const position *PLAYERS_GOAL[MAX_NB_PLAYER] = {PLAYER1_GOAL, PLAYER2_GOAL, PLAYER3_GOAL, PLAYER4_GOAL};
 // clang-format on
 
+// create New Ai Move
+// New Ai Move = a new movement with a score for it
+aiMove* CreateNewAiMove(float score, u8 pawnId, u8 line, u8 column) {
+  aiMove* newAiMove;
+  newAiMove = (aiMove*)malloc(sizeof(struct aiMove));
+  if (newAiMove == NULL) {
+    perror("Error: can't init aiMove. Exit.\n");
+    exit(-1);
+  }
+  newAiMove->score = score;
+  newAiMove->column = column;
+  newAiMove->line = line;
+  newAiMove->pawnId = pawnId;
+  newAiMove->pNextAiMove = NULL; // by default, they are no next aiMove
+  return newAiMove;
+}
+
+// push a new aiMove at the end of the linked list
+aiMove* PushNewAiMove(aiMove* allAiMove, aiMove* newAiMove) {
+  if (newAiMove != NULL) {
+    // we are at the end of the linkedlist
+    if (allAiMove == NULL) return newAiMove;
+    allAiMove->pNextAiMove = PushNewAiMove(allAiMove->pNextAiMove, newAiMove);
+  }
+  return allAiMove;
+}
+
+// free the memory when we finish to use it
+void FreeLinkedAiMove(aiMove** allAiMove) {
+  aiMove* tmp; // to keep the next move to erase before remove it in the current move
+  while (*allAiMove != NULL) {
+    tmp = *allAiMove;
+    *allAiMove = (aiMove*)(*allAiMove)->pNextAiMove;
+    free(tmp);
+  }
+  allAiMove = NULL;
+}
+
 // compute score with current pawns inside our goal
 // result between 0 and 1
 float GetPlayerScore(u8 playerId, pawn** pPawnsPlayer) {
@@ -138,6 +176,124 @@ u8* ComputeSqrtDistanceTable() {
   return tmpSqrtDistanceTable;
 }
 
+// minimax algorithme for AI
+// simple but okay for this game
+float MinMax(pawn** pChessboard, u8 depth, u8 maximizingPlayer, pawn*** pPlayersPawns, u8 nbPlayers,
+             u8* sqrtDistanceTable) {
+  float   maxEval;
+  float   minEval;
+  u8      currentLine;
+  u8      currentColumn;
+  u8      currentType;
+  aiMove* allAiMove = NULL;
+  aiMove* tmpAiMove = NULL;
+  move*   allNewMoves = NULL;
+  move*   pTmpMove = NULL;
+
+  if ((depth == 0) || (GameOver(nbPlayers, pPlayersPawns))) {
+    return GetChessboardScore(pPlayersPawns, pChessboard, sqrtDistanceTable);
+  }
+
+  // we want the highest score for the HUM player
+  // so closest to 1
+  if (maximizingPlayer == TRUE) {
+    maxEval = -1.0;
+    // Loop on each pawn, we want to test all possible new moves
+    for (u8 pawnId = 0; pawnId < NB_PAWNS; pawnId++) {
+      // compute future move for this pawn
+      currentLine = pPlayersPawns[HUMAIN][pawnId]->pos.line;
+      currentColumn = pPlayersPawns[HUMAIN][pawnId]->pos.column;
+      currentType = pPlayersPawns[HUMAIN][pawnId]->type;
+      allNewMoves = ComputeFutureMoves(currentLine, currentColumn, OUT_OF_BOUND, OUT_OF_BOUND, currentType, HUMAIN,
+                                       FALSE, pChessboard);
+
+      // for all futures new moves
+      pTmpMove = allNewMoves;
+      while (pTmpMove != NULL) {
+        // move, temporary, this pawn to get the score about this move
+        MovePawnOnChessboard(pChessboard, pPlayersPawns, HUMAIN, pawnId, pTmpMove->newPos.column,
+                             pTmpMove->newPos.line);
+        // store the score of this new movement
+        allAiMove = PushNewAiMove(allAiMove, CreateNewAiMove(MinMax(pChessboard, depth - 1, FALSE, pPlayersPawns,
+                                                                    nbPlayers, sqrtDistanceTable),
+                                                             pawnId, currentLine, currentColumn));
+        // moveback this pawn to his previous place
+        MovePawnOnChessboard(pChessboard, pPlayersPawns, HUMAIN, pawnId, currentColumn, currentLine);
+        pTmpMove = pTmpMove->pNextMove;
+      }
+      FreeLinkedListMoves(&allNewMoves);
+    }
+    // keep the best one
+    tmpAiMove = allAiMove;
+    while (tmpAiMove != NULL) {
+      if (tmpAiMove->score > maxEval) maxEval = tmpAiMove->score;
+      tmpAiMove = tmpAiMove->pNextAiMove;
+    }
+    FreeLinkedAiMove(&allAiMove);
+    return maxEval;
+  }
+
+  // we want the highest score for the CPU player
+  // so closest to -1
+  else {
+    minEval = 1.0;
+    // Loop on each pawn, we want to test all possible new moves
+    for (u8 pawnId = 0; pawnId < NB_PAWNS; pawnId++) {
+      // compute future move for this pawn
+      currentLine = pPlayersPawns[CPU][pawnId]->pos.line;
+      currentColumn = pPlayersPawns[CPU][pawnId]->pos.column;
+      currentType = pPlayersPawns[CPU][pawnId]->type;
+      allNewMoves = ComputeFutureMoves(currentLine, currentColumn, OUT_OF_BOUND, OUT_OF_BOUND, currentType, CPU, FALSE,
+                                       pChessboard);
+
+      // for all futures new moves
+      pTmpMove = allNewMoves;
+      while (pTmpMove != NULL) {
+        // move, temporary, this pawn to get the score about this move
+        MovePawnOnChessboard(pChessboard, pPlayersPawns, CPU, pawnId, pTmpMove->newPos.column, pTmpMove->newPos.line);
+        // store the score of this new movement
+        allAiMove = PushNewAiMove(allAiMove, CreateNewAiMove(MinMax(pChessboard, depth - 1, TRUE, pPlayersPawns,
+                                                                    nbPlayers, sqrtDistanceTable),
+                                                             pawnId, currentLine, currentColumn));
+        // moveback this pawn to his previous place
+        MovePawnOnChessboard(pChessboard, pPlayersPawns, HUMAIN, pawnId, currentColumn, currentLine);
+        pTmpMove = pTmpMove->pNextMove;
+      }
+      FreeLinkedListMoves(&allNewMoves);
+    }
+    // keep the best one
+    tmpAiMove = allAiMove;
+    while (tmpAiMove != NULL) {
+      if (tmpAiMove->score < minEval) minEval = tmpAiMove->score;
+      tmpAiMove = tmpAiMove->pNextAiMove;
+    }
+    FreeLinkedAiMove(&allAiMove);
+    return minEval;
+  }
+}
+
+// check if one player win the game
+// -1 no one win
+// else return the player id of the winner
+s8 GameOver(u8 nbPlayer, pawn*** pPlayersPawns) {
+  u8 winner;
+  for (u8 playerId = 0; playerId < nbPlayer; playerId++) {
+    winner = TRUE;
+    for (u8 pawnId = 0; pawnId < NB_PAWNS; pawnId++) {
+      if (IsPawnInsideGoal(playerId, pPlayersPawns[playerId][pawnId]) == FALSE) {
+        winner = -1;
+        break;
+      }
+    }
+    // we have a winner
+    if (winner != -1) {
+      winner = playerId;
+      break;
+    }
+  }
+  return winner;
+}
+
 // alloc new pawn
 pawn* InitPawn(u8 type, u8 line, u8 column, u8 playerId, u8 pawnId) {
   pawn* newPawn;
@@ -184,6 +340,18 @@ void UpdateChessboard(u8 nbPlayers, pawn*** pPlayersPawns, pawn** pChessboard) {
       pChessboard[INDEX_2D(column, line)] = pPlayersPawns[playerId][pawnId];
     }
   }
+}
+
+// move pawn to a new position
+void MovePawnOnChessboard(pawn** pChessboard, pawn*** pPlayersPawns, u8 player, u8 pawnId, u8 newColumn, u8 newLine) {
+  u8 currentLine = pPlayersPawns[player][pawnId]->pos.line;
+  u8 currentColumn = pPlayersPawns[player][pawnId]->pos.column;
+  // move to the new position
+  pPlayersPawns[player][pawnId]->pos.column = newColumn;
+  pPlayersPawns[player][pawnId]->pos.line = newLine;
+  pChessboard[INDEX_2D(newColumn, newLine)] = pPlayersPawns[player][pawnId];
+  // clear the old position
+  pChessboard[INDEX_2D(currentColumn, currentLine)] = NULL;
 }
 
 // Create a new move, must be added inside linked list
@@ -271,7 +439,7 @@ u8 GetTypeOfCell(u8 line, u8 column, u8 playerId, pawn** pChessboard) {
     typeOfCell = IS_OUT_OF_BOUND;
   } else {
     // the cell is empty ?
-    if (pChessboard[(line * CHESSBOARD_SIZE) + column] == NULL) {
+    if (pChessboard[INDEX_2D(column, line)] == NULL) {
       typeOfCell = IS_EMPTY;
       // the cell is in the edge of the chessboard
       if ((line == 0) || (line == 9) || (column == 0) || (column == 9)) typeOfCell = IS_IN_EDGE;
@@ -316,7 +484,6 @@ move* ComputeFutureMoves(u8 cLine, u8 cColumn, u8 oLine, u8 oColumn, u8 type, u8
   if (mustJump == FALSE) {
     for (u8 i = 0; i < 8; i++) {                    // for all neighbours around this cell
       if (neighbours[i].usedByType[type] == TRUE) { // if this neighbours can be tested by our type
-
         // compute neighbours positions and type of cell
         nLine = cLine + neighbours[i].pos.line;
         nColumn = cColumn + neighbours[i].pos.column;
