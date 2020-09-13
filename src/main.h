@@ -23,6 +23,10 @@ GtkWidget*       dialogRules;
 // widget for menu
 GtkWidget* humanRadioItem;
 GtkWidget* player2RadioItem;
+// widget for string
+GtkWidget* lPlayerStr;
+GtkWidget* lPlayer;
+GtkWidget* lRoundStr;
 
 // globals pointers for game logic
 Pawn**  pChessboard;      // like the real life, a cell on a chessboard can be empty or with a pawn on it
@@ -53,7 +57,7 @@ gboolean ConfigureSurface(GtkWidget* widget, GdkEventConfigure* event, gpointer 
 gboolean DrawCallback(GtkWidget* widget, cairo_t* cr, gpointer data);
 void     EventNbPlayersChanged(GtkWidget* radioMenuItem, gpointer data);
 void     EventDifficultyChanged(GtkWidget* radioMenuItem, gpointer data);
-void     UpdateStatusBar(GtkWidget* statusBar, u8 playerId, u8 round);
+void     UpdateStatusBar(GtkWidget* statusBar, u8 currentPlayer, u8 currentRound);
 void     ResetGameLogicVariables();
 void     AllocGameVariables();
 void     WaitPawnProcess();

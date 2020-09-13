@@ -42,7 +42,7 @@
 #define PLAYER1_PATH_COLOR  { 0.8, 0.0, 0.0 }
 #define PLAYER2_PATH_COLOR  { 0.2, 0.2, 0.8 }
 #define PLAYER3_PATH_COLOR  { 0.2, 0.7, 0.0 }
-#define PLAYER4_PATH_COLOR  { 1.0, 0.6, 0.0 }
+#define PLAYER4_PATH_COLOR  { 1.0, 0.7, 0.0 }
 // clang-format on
 
 // external array png image for pawn

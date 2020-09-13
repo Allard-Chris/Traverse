@@ -90,7 +90,6 @@ typedef struct AiMove {
 } AiMove;
 
 // constant array
-extern const char*     PLAYERS_STRING[4];           // NOLINT
 extern const Position  PLAYER1_GOAL[NB_PAWNS];      // NOLINT
 extern const Position  PLAYER2_GOAL[NB_PAWNS];      // NOLINT
 extern const Position  PLAYER3_GOAL[NB_PAWNS];      // NOLINT

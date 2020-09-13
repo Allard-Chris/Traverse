@@ -109,10 +109,14 @@ void RunningApp(GtkApplication* app, gpointer user_data) {
   g_signal_connect(drawingArea, "motion-notify-event", G_CALLBACK(GameLogic), NULL);
 
   //***** STATUSBAR WIDGET SECTION ******
-  statusBar = gtk_statusbar_new();
-  guint statusBarContext = gtk_statusbar_get_context_id(GTK_STATUSBAR(statusBar), GAME_STATUS_STR);
+  statusBar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
   gtk_container_add(GTK_CONTAINER(vbox), statusBar);
-  gtk_statusbar_push(GTK_STATUSBAR(statusBar), statusBarContext, "Init");
+  lPlayerStr = gtk_label_new("");
+  lPlayer = gtk_label_new("");
+  lRoundStr = gtk_label_new("");
+  gtk_container_add(GTK_CONTAINER(statusBar), lPlayerStr);
+  gtk_container_add(GTK_CONTAINER(statusBar), lPlayer);
+  gtk_container_add(GTK_CONTAINER(statusBar), lRoundStr);
 
   //***** START GAME LOGIC Init ****
   AllocGameVariables();               // alloc heap memories
@@ -252,7 +256,6 @@ gboolean GameLogic(GtkWidget* widget, GdkEventMotion* event, gpointer data) {
   // check if one player win the game
 
   if (GameOver(nbPlayers, pPlayersPawns) != -1) {
-    printf("The playe %s Win this game \n", PLAYERS_STRING[GameOver(nbPlayers, pPlayersPawns)]);
     ResetGameLogicVariables();
   }
 
@@ -371,7 +374,6 @@ gboolean GameLogic(GtkWidget* widget, GdkEventMotion* event, gpointer data) {
 
   // update status bar
   UpdateStatusBar(statusBar, currentPlayer, currentRound);
-
   return TRUE;
 }
 
@@ -496,12 +498,24 @@ gboolean EventClickOnBoard(GtkWidget* widget, GdkEventButton* event) {
 
 // update StatusBar String with current player and round number
 void UpdateStatusBar(GtkWidget* statusBar, u8 currentPlayer, u8 currentRound) {
-  guint pTmpMoveGuint = gtk_statusbar_get_context_id(GTK_STATUSBAR(statusBar), GAME_STATUS_STR);
-  gchar statusBarString[45];
-  snprintf(statusBarString, sizeof statusBarString, "Player's turn: %s, current round: %d",
-           PLAYERS_STRING[currentPlayer], currentRound);
-  gtk_statusbar_pop(GTK_STATUSBAR(statusBar), pTmpMoveGuint);
-  gtk_statusbar_push(GTK_STATUSBAR(statusBar), pTmpMoveGuint, statusBarString);
+  gchar statusBarString[30];
+  snprintf(statusBarString, sizeof statusBarString, ", current round: %d", currentRound);
+  gtk_label_set_label(GTK_LABEL(lPlayerStr), "Player's turn: ");
+  switch (currentPlayer) {
+  case 0:
+    gtk_label_set_markup(GTK_LABEL(lPlayer), "<span foreground='#CC0000' weight='bold' font='14'>Player 1</span>");
+    break;
+  case 1:
+    gtk_label_set_markup(GTK_LABEL(lPlayer), "<span foreground='#3333CC' weight='bold' font='14'>Player 2</span>");
+    break;
+  case 2:
+    gtk_label_set_markup(GTK_LABEL(lPlayer), "<span foreground='#33B200' weight='bold' font='14'>Player 3</span>");
+    break;
+  case 3:
+    gtk_label_set_markup(GTK_LABEL(lPlayer), "<span foreground='#FF9900' weight='bold' font='14'>Player 4</span>");
+    break;
+  }
+  gtk_label_set_label(GTK_LABEL(lRoundStr), statusBarString);
 }
 
 // change difficulty and restart the game
