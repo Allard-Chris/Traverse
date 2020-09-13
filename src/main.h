@@ -2,6 +2,7 @@
 #define _HEADER_MAIN_H
 
 // imports libs
+#include "math.h"
 #include "traverse.h"
 #include "traverse_gtk.h"
 #include "utils.h"
@@ -24,18 +25,14 @@ GtkWidget* humanRadioItem;
 GtkWidget* player2RadioItem;
 
 // globals pointers for game logic
-pawn**  pChessboard;      // like the real life, a cell on a chessboard can be empty or with a pawn on it
-pawn*** pPlayersPawns;    // Array of address of each players
-pawn**  pPawnsPlayer1;    // Array of address of each player1's pawns
-pawn**  pPawnsPlayer2;    // Array of address of each player2's pawns
-pawn**  pPawnsPlayer3;    // Array of address of each player3's pawns
-pawn**  pPawnsPlayer4;    // Array of address of each player4's pawns
-pawn*   selectPlayerPawn; // address of the current selected pawn
-move*   allNewMoves;
-aiMove* allAiMove;
-aiMove* tmpAiMove;
-move*   pTmpMove;
-jump*   pTmpJump;
+Pawn**  pChessboard;      // like the real life, a cell on a chessboard can be empty or with a pawn on it
+Pawn*** pPlayersPawns;    // Array of address of each players
+Pawn**  pPawnsPlayer1;    // Array of address of each player1's pawns
+Pawn**  pPawnsPlayer2;    // Array of address of each player2's pawns
+Pawn**  pPawnsPlayer3;    // Array of address of each player3's pawns
+Pawn**  pPawnsPlayer4;    // Array of address of each player4's pawns
+Pawn*   selectPlayerPawn; // address of the current selected pawn
+Move*   newMoves;
 u8*     sqrtDistanceTable;
 
 // global variables for game logic
@@ -60,7 +57,7 @@ void     UpdateStatusBar(GtkWidget* statusBar, u8 playerId, u8 round);
 void     ResetGameLogicVariables();
 void     AllocGameVariables();
 void     WaitPawnProcess();
-void     NewPawnSelectedProcess(pawn* selectedPawn);
+void     NewPawnSelectedProcess(Pawn* selectedPawn);
 void     AboutMessage();
 void     RulesMessage();
 void     QuitGame();

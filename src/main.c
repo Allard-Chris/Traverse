@@ -5,7 +5,7 @@ int main(int argc, char** argv) {
   GtkApplication* app;
   int             status;
 
-  // Running GTK App
+  // Launch GTK App
   app = gtk_application_new("org.gtk.games.traverse", G_APPLICATION_FLAGS_NONE);
   g_signal_connect(app, "activate", G_CALLBACK(RunningApp), NULL);
   status = g_application_run(G_APPLICATION(app), argc, argv);
@@ -14,13 +14,13 @@ int main(int argc, char** argv) {
   return status;
 }
 
-// the real main behind the main
+// the main application
 void RunningApp(GtkApplication* app, gpointer user_data) {
   //**** START GTK Init *****
-  setvbuf(stdout, NULL, _IONBF, 0);
+  setvbuf(stdout, NULL, _IONBF, 0); // MUST BE REMOVE
   // create GTK windows
   window = gtk_application_window_new(app);
-  gtk_window_set_title(GTK_WINDOW(window), "Traverse");
+  gtk_window_set_title(GTK_WINDOW(window), "Traverse Board Game");
   gtk_container_set_border_width(GTK_CONTAINER(window), 8);
   gtk_window_set_resizable((GtkWindow*)window, FALSE); // cant resize it
   g_signal_connect(window, "delete-event", G_CALLBACK(QuitGame), NULL);
@@ -115,23 +115,23 @@ void RunningApp(GtkApplication* app, gpointer user_data) {
   gtk_statusbar_push(GTK_STATUSBAR(statusBar), statusBarContext, "Init");
 
   //***** START GAME LOGIC Init ****
-  AllocGameVariables();               // alloc memories
+  AllocGameVariables();               // alloc heap memories
   ResetGameLogicVariables();          // init gameLogic variables
   LoadPNGSurface();                   // Loading all pawns png data in array
-  gtk_widget_show_all(window);        // show all
-  GameLogic(drawingArea, NULL, NULL); // first time draw chessboard
+  gtk_widget_show_all(window);        // show  widgets
+  GameLogic(drawingArea, NULL, NULL); // start new game
   gtk_widget_queue_draw(drawingArea);
 }
 
-// do all memories alloc for game logic variables
+// do all memories allocations for game logic variables
 void AllocGameVariables() {
-  pChessboard = malloc((CHESSBOARD_SIZE * CHESSBOARD_SIZE) * sizeof(pawn*));
+  pChessboard = malloc((CHESSBOARD_SIZE * CHESSBOARD_SIZE) * sizeof(Pawn*));
   sqrtDistanceTable = ComputeSqrtDistanceTable();
-  pPlayersPawns = malloc(4 * sizeof(pawn**));
-  pPawnsPlayer1 = malloc(NB_PAWNS * sizeof(pawn*));
-  pPawnsPlayer2 = malloc(NB_PAWNS * sizeof(pawn*));
-  pPawnsPlayer3 = malloc(NB_PAWNS * sizeof(pawn*));
-  pPawnsPlayer4 = malloc(NB_PAWNS * sizeof(pawn*));
+  pPlayersPawns = malloc(4 * sizeof(Pawn**));
+  pPawnsPlayer1 = malloc(NB_PAWNS * sizeof(Pawn*));
+  pPawnsPlayer2 = malloc(NB_PAWNS * sizeof(Pawn*));
+  pPawnsPlayer3 = malloc(NB_PAWNS * sizeof(Pawn*));
+  pPawnsPlayer4 = malloc(NB_PAWNS * sizeof(Pawn*));
   pPlayersPawns[0] = pPawnsPlayer1;
   pPlayersPawns[1] = pPawnsPlayer2;
   pPlayersPawns[2] = pPawnsPlayer3;
@@ -144,8 +144,8 @@ void AllocGameVariables() {
 
   // init all pawns pointers to NULL
   for (u8 playerId = 0; playerId < 4; playerId++) {
-    for (u8 pawnId = 0; pawnId < NB_PAWNS; pawnId++) {
-      pPlayersPawns[playerId][pawnId] = (pawn*)NULL;
+    for (u8 pawnIndex = 0; pawnIndex < NB_PAWNS; pawnIndex++) {
+      pPlayersPawns[playerId][pawnIndex] = (Pawn*)NULL;
     }
   }
 }
@@ -159,11 +159,7 @@ void ResetGameLogicVariables() {
   FreePlayerPawns(pPawnsPlayer4);
 
   // reinit variables
-  allNewMoves = NULL;
-  allAiMove = NULL;
-  tmpAiMove = NULL;
-  pTmpMove = NULL;
-  pTmpJump = NULL;
+  newMoves = NULL;
   currentPlayer = 0;
   currentType = 0;
   currentLine = 0;
@@ -173,47 +169,47 @@ void ResetGameLogicVariables() {
   gameState = WAIT_PAWN;
 
   // init player1 pawns
-  pPawnsPlayer1[0] = InitPawn(0, PLAYER1_BASE, 1, PLAYER1, 0);
-  pPawnsPlayer1[1] = InitPawn(1, PLAYER1_BASE, 2, PLAYER1, 1);
-  pPawnsPlayer1[2] = InitPawn(5, PLAYER1_BASE, 3, PLAYER1, 2);
-  pPawnsPlayer1[3] = InitPawn(6, PLAYER1_BASE, 4, PLAYER1, 3);
-  pPawnsPlayer1[4] = InitPawn(6, PLAYER1_BASE, 5, PLAYER1, 4);
-  pPawnsPlayer1[5] = InitPawn(5, PLAYER1_BASE, 6, PLAYER1, 5);
-  pPawnsPlayer1[6] = InitPawn(1, PLAYER1_BASE, 7, PLAYER1, 6);
-  pPawnsPlayer1[7] = InitPawn(0, PLAYER1_BASE, 8, PLAYER1, 7);
+  pPawnsPlayer1[0] = CreatePawn(PLAYER1_BASE, 1, 0, PLAYER1, 0);
+  pPawnsPlayer1[1] = CreatePawn(PLAYER1_BASE, 2, 1, PLAYER1, 1);
+  pPawnsPlayer1[2] = CreatePawn(PLAYER1_BASE, 3, 5, PLAYER1, 2);
+  pPawnsPlayer1[3] = CreatePawn(PLAYER1_BASE, 4, 6, PLAYER1, 3);
+  pPawnsPlayer1[4] = CreatePawn(PLAYER1_BASE, 5, 6, PLAYER1, 4);
+  pPawnsPlayer1[5] = CreatePawn(PLAYER1_BASE, 6, 5, PLAYER1, 5);
+  pPawnsPlayer1[6] = CreatePawn(PLAYER1_BASE, 7, 1, PLAYER1, 6);
+  pPawnsPlayer1[7] = CreatePawn(PLAYER1_BASE, 8, 0, PLAYER1, 7);
   pPlayersPawns[0] = pPawnsPlayer1;
 
   // init player2 pawns
-  pPawnsPlayer2[0] = InitPawn(0, PLAYER2_BASE, 1, PLAYER2, 0);
-  pPawnsPlayer2[1] = InitPawn(2, PLAYER2_BASE, 2, PLAYER2, 1);
-  pPawnsPlayer2[2] = InitPawn(5, PLAYER2_BASE, 3, PLAYER2, 2);
-  pPawnsPlayer2[3] = InitPawn(6, PLAYER2_BASE, 4, PLAYER2, 3);
-  pPawnsPlayer2[4] = InitPawn(6, PLAYER2_BASE, 5, PLAYER2, 4);
-  pPawnsPlayer2[5] = InitPawn(5, PLAYER2_BASE, 6, PLAYER2, 5);
-  pPawnsPlayer2[6] = InitPawn(2, PLAYER2_BASE, 7, PLAYER2, 6);
-  pPawnsPlayer2[7] = InitPawn(0, PLAYER2_BASE, 8, PLAYER2, 7);
+  pPawnsPlayer2[0] = CreatePawn(PLAYER2_BASE, 1, 0, PLAYER2, 0);
+  pPawnsPlayer2[1] = CreatePawn(PLAYER2_BASE, 2, 2, PLAYER2, 1);
+  pPawnsPlayer2[2] = CreatePawn(PLAYER2_BASE, 3, 5, PLAYER2, 2);
+  pPawnsPlayer2[3] = CreatePawn(PLAYER2_BASE, 4, 6, PLAYER2, 3);
+  pPawnsPlayer2[4] = CreatePawn(PLAYER2_BASE, 5, 6, PLAYER2, 4);
+  pPawnsPlayer2[5] = CreatePawn(PLAYER2_BASE, 6, 5, PLAYER2, 5);
+  pPawnsPlayer2[6] = CreatePawn(PLAYER2_BASE, 7, 2, PLAYER2, 6);
+  pPawnsPlayer2[7] = CreatePawn(PLAYER2_BASE, 8, 0, PLAYER2, 7);
   pPlayersPawns[1] = pPawnsPlayer2;
 
   // init player3 pawns
-  pPawnsPlayer3[0] = InitPawn(0, 1, PLAYER3_BASE, PLAYER3, 0);
-  pPawnsPlayer3[1] = InitPawn(3, 2, PLAYER3_BASE, PLAYER3, 1);
-  pPawnsPlayer3[2] = InitPawn(5, 3, PLAYER3_BASE, PLAYER3, 2);
-  pPawnsPlayer3[3] = InitPawn(6, 4, PLAYER3_BASE, PLAYER3, 3);
-  pPawnsPlayer3[4] = InitPawn(6, 5, PLAYER3_BASE, PLAYER3, 4);
-  pPawnsPlayer3[5] = InitPawn(5, 6, PLAYER3_BASE, PLAYER3, 5);
-  pPawnsPlayer3[6] = InitPawn(3, 7, PLAYER3_BASE, PLAYER3, 6);
-  pPawnsPlayer3[7] = InitPawn(0, 8, PLAYER3_BASE, PLAYER3, 7);
+  pPawnsPlayer3[0] = CreatePawn(1, PLAYER3_BASE, 0, PLAYER3, 0);
+  pPawnsPlayer3[1] = CreatePawn(2, PLAYER3_BASE, 3, PLAYER3, 1);
+  pPawnsPlayer3[2] = CreatePawn(3, PLAYER3_BASE, 5, PLAYER3, 2);
+  pPawnsPlayer3[3] = CreatePawn(4, PLAYER3_BASE, 6, PLAYER3, 3);
+  pPawnsPlayer3[4] = CreatePawn(5, PLAYER3_BASE, 6, PLAYER3, 4);
+  pPawnsPlayer3[5] = CreatePawn(6, PLAYER3_BASE, 5, PLAYER3, 5);
+  pPawnsPlayer3[6] = CreatePawn(7, PLAYER3_BASE, 3, PLAYER3, 6);
+  pPawnsPlayer3[7] = CreatePawn(8, PLAYER3_BASE, 0, PLAYER3, 7);
   pPlayersPawns[2] = pPawnsPlayer3;
 
   // init player4 pawns
-  pPawnsPlayer4[0] = InitPawn(0, 1, PLAYER4_BASE, PLAYER4, 0);
-  pPawnsPlayer4[1] = InitPawn(4, 2, PLAYER4_BASE, PLAYER4, 1);
-  pPawnsPlayer4[2] = InitPawn(5, 3, PLAYER4_BASE, PLAYER4, 2);
-  pPawnsPlayer4[3] = InitPawn(6, 4, PLAYER4_BASE, PLAYER4, 3);
-  pPawnsPlayer4[4] = InitPawn(6, 5, PLAYER4_BASE, PLAYER4, 4);
-  pPawnsPlayer4[5] = InitPawn(5, 6, PLAYER4_BASE, PLAYER4, 5);
-  pPawnsPlayer4[6] = InitPawn(4, 7, PLAYER4_BASE, PLAYER4, 6);
-  pPawnsPlayer4[7] = InitPawn(0, 8, PLAYER4_BASE, PLAYER4, 7);
+  pPawnsPlayer4[0] = CreatePawn(1, PLAYER4_BASE, 0, PLAYER4, 0);
+  pPawnsPlayer4[1] = CreatePawn(2, PLAYER4_BASE, 4, PLAYER4, 1);
+  pPawnsPlayer4[2] = CreatePawn(3, PLAYER4_BASE, 5, PLAYER4, 2);
+  pPawnsPlayer4[3] = CreatePawn(4, PLAYER4_BASE, 6, PLAYER4, 3);
+  pPawnsPlayer4[4] = CreatePawn(5, PLAYER4_BASE, 6, PLAYER4, 4);
+  pPawnsPlayer4[5] = CreatePawn(6, PLAYER4_BASE, 5, PLAYER4, 5);
+  pPawnsPlayer4[6] = CreatePawn(7, PLAYER4_BASE, 4, PLAYER4, 6);
+  pPawnsPlayer4[7] = CreatePawn(8, PLAYER4_BASE, 0, PLAYER4, 7);
   pPlayersPawns[3] = pPawnsPlayer4;
 
   // clear chessboard cell pointers and set all players's paws on it
@@ -225,10 +221,20 @@ void ResetGameLogicVariables() {
 // draw the game, every time the user move the mouse
 // not great, not terrible...
 gboolean GameLogic(GtkWidget* widget, GdkEventMotion* event, gpointer data) {
-  u8 mouseCellX = 0;
-  u8 mouseCellY = 0;
-  u8 oldPathCellX = 0;
-  u8 oldPathCellY = 0;
+  u8      mouseCellX = 0;
+  u8      mouseCellY = 0;
+  u8      oldPathCellX = 0;
+  u8      oldPathCellY = 0;
+  u8      nbScore = 0;
+  u8      indexBestScore;
+  u8      index = 0;
+  float   score = 0.0;
+  float   bestScore = 100.0;
+  Move*   cursorNewMoves = NULL;
+  Move*   cursorPath = NULL;
+  AiMove* aiMoves = NULL;
+  AiMove* cursorAiMoves = NULL;
+
   // get the current cell where is the mouse
   if (event != NULL) GetMouseToCellPosition(event->x, event->y, &mouseCellX, &mouseCellY);
   oldPathCellX = mouseCellX;
@@ -243,89 +249,117 @@ gboolean GameLogic(GtkWidget* widget, GdkEventMotion* event, gpointer data) {
   // draw all pawns for each player
   DrawPawns(widget, pChessboard);
 
-  //  // if CPU turn
-  //  if ((difficulty != 0) && (currentPlayer == CPU)) {
-  //
-  //    // Loop on each pawn, we want to test all possible new moves
-  //    for (u8 pawnId = 0; pawnId < NB_PAWNS; pawnId++) {
-  //      // compute future move for this pawn
-  //      currentLine = pPlayersPawns[CPU][pawnId]->pos.line;
-  //      currentColumn = pPlayersPawns[CPU][pawnId]->pos.column;
-  //      currentType = pPlayersPawns[CPU][pawnId]->type;
-  //      allNewMoves = ComputeFutureMoves(currentLine, currentColumn, OUT_OF_BOUND, OUT_OF_BOUND, currentType, CPU,
-  //      FALSE,
-  //                                       pChessboard);
-  //
-  //      // for all futures new moves
-  //      pTmpMove = allNewMoves;
-  //      while (pTmpMove != NULL) {
-  //        // move, temporary, this pawn to get the score about this move
-  //        MovePawnOnChessboard(pChessboard, pPlayersPawns, CPU, pawnId, pTmpMove->newPos.column,
-  //        pTmpMove->newPos.line);
-  //        // store the score of this new movement
-  //        allAiMove = PushNewAiMove(allAiMove, CreateNewAiMove(MinMax(pChessboard, difficulty, TRUE, pPlayersPawns,
-  //                                                                    nbPlayers, sqrtDistanceTable),
-  //                                                             pawnId, currentLine, currentColumn));
-  //        // moveback this pawn to his previous place
-  //        MovePawnOnChessboard(pChessboard, pPlayersPawns, CPU, pawnId, currentColumn, currentLine);
-  //        pTmpMove = pTmpMove->pNextMove;
-  //      }
-  //      FreeLinkedListMoves(&allNewMoves);
-  //    }
-  //    // keep the best one
-  //    tmpAiMove = allAiMove;
-  //    while (tmpAiMove != NULL) {
-  //      tmpAiMove = tmpAiMove->pNextAiMove;
-  //    }
-  //
-  //    FreeLinkedAiMove(&allAiMove);
-  //    // pour chaque pion, on bouge aléatoirement un de ceux qui a le plus gros score
-  //    gameState = NEW_MOVE_DONE;
-  //  }
-  //
-  //  // else Humain turn
-  //  else {
-  // a pawn is currently selected
-  if (selectPlayerPawn != NULL) {
-    // Draw circle on this pawn
-    DrawCircle(widget, selectPlayerPawn->pos.line, selectPlayerPawn->pos.column,
-               PLAYERS_COLOR[selectPlayerPawn->playerId]);
-    if (allNewMoves != NULL) {
+  // check if one player win the game
 
-      // draw possible new moves
-      pTmpMove = allNewMoves;
-      while (pTmpMove != NULL) {
-        DrawCell(widget, pTmpMove->newPos.line, pTmpMove->newPos.column, PLAYERS_COLOR[selectPlayerPawn->playerId]);
-        pTmpMove = pTmpMove->pNextMove;
-      }
+  if (GameOver(nbPlayers, pPlayersPawns) != -1) {
+    printf("The playe %s Win this game \n", PLAYERS_STRING[GameOver(nbPlayers, pPlayersPawns)]);
+    ResetGameLogicVariables();
+  }
 
-      // draw path
-      pTmpMove = allNewMoves;
-      while (pTmpMove != NULL) {
-        // draw path for the future new move where the mouse is on
-        if ((mouseCellX == pTmpMove->newPos.column) && (mouseCellY == pTmpMove->newPos.line)) {
-          if (pTmpMove->path == NULL) {
-            DrawCellPath(widget, pTmpMove->newPos.column, pTmpMove->newPos.line, selectPlayerPawn->pos.column,
-                         selectPlayerPawn->pos.line, PLAYERS_PATH_COLOR[currentPlayer]);
-          } else {
-            pTmpJump = pTmpMove->path;
-            while (pTmpJump != NULL) {
-              DrawCellPath(widget, oldPathCellX, oldPathCellY, pTmpJump->pos.column, pTmpJump->pos.line,
-                           PLAYERS_PATH_COLOR[currentPlayer]);
-              oldPathCellX = pTmpJump->pos.column;
-              oldPathCellY = pTmpJump->pos.line;
-              pTmpJump = pTmpJump->pNextJump;
-            }
-            DrawCellPath(widget, oldPathCellX, oldPathCellY, selectPlayerPawn->pos.column, selectPlayerPawn->pos.line,
-                         PLAYERS_PATH_COLOR[currentPlayer]);
-          }
+  // if CPU turn
+  if ((difficulty != 0) && (currentPlayer == CPU)) {
+    // Loop on each pawn, we want to test all possible new moves
+    for (u8 pawnIndex = 0; pawnIndex < NB_PAWNS; pawnIndex++) {
+      // compute future move for this pawn
+      currentLine = pPlayersPawns[CPU][pawnIndex]->pos.line;
+      currentColumn = pPlayersPawns[CPU][pawnIndex]->pos.column;
+      currentType = pPlayersPawns[CPU][pawnIndex]->type;
+      newMoves = ComputeFutureMoves(newMoves, NULL, MAX_DEPTH, OUT_OF_BOUND, OUT_OF_BOUND,
+                                    pPlayersPawns[CPU][pawnIndex], FALSE, pChessboard);
+
+      // for all futures new moves, for this pawn, get the score of movement
+      cursorNewMoves = newMoves;
+      while (cursorNewMoves != NULL) {
+        if (cursorNewMoves->canStay == TRUE) {
+          // move the pawn to the new position to get the current score of the game
+          MovePawn(pChessboard, pPlayersPawns[CPU][pawnIndex], cursorNewMoves->newPosition.line,
+                   cursorNewMoves->newPosition.column);
+          score = MinMax(pChessboard, difficulty, HUMAIN, pPlayersPawns, sqrtDistanceTable);
+          aiMoves = TopPushAiMove(aiMoves, CreateAiMove(score, pawnIndex, cursorNewMoves->newPosition.line,
+                                                        cursorNewMoves->newPosition.column));
+          // move back the pawn
+          MovePawn(pChessboard, pPlayersPawns[CPU][pawnIndex], currentLine, currentColumn);
         }
-        pTmpMove = pTmpMove->pNextMove;
+        cursorNewMoves = cursorNewMoves->next;
+      }
+      FreeLinkedListMoves(&newMoves);
+      cursorNewMoves = NULL;
+    }
+
+    // now we must to choose one of the best score for the player(CPU or HUMAIN)
+    // here get how many time we get the best score
+    cursorAiMoves = aiMoves;
+    while (cursorAiMoves != NULL) {
+      if (cursorAiMoves->score < bestScore) {
+        bestScore = cursorAiMoves->score;
+        nbScore = 1;
+      } else if (cursorAiMoves->score == bestScore) {
+        nbScore++;
+      }
+      cursorAiMoves = cursorAiMoves->next;
+    }
+
+    // choose one of the best score
+    indexBestScore = (rand() % nbScore) + 1;
+    cursorAiMoves = aiMoves;
+    while (cursorAiMoves != NULL) {
+      if (cursorAiMoves->score == bestScore) {
+        index++;
+      }
+      if (index == indexBestScore) {
+        MovePawn(pChessboard, pPlayersPawns[CPU][cursorAiMoves->pawnId], cursorAiMoves->newPosition.line,
+                 cursorAiMoves->newPosition.column);
+        break;
+      }
+      cursorAiMoves = cursorAiMoves->next;
+    }
+    FreeLinkedListAiMoves(&aiMoves);
+    cursorAiMoves = NULL;
+    gameState = NEW_MOVE_DONE;
+  }
+
+  // else Humain turn
+  else {
+    // a pawn is currently selected
+    if (selectPlayerPawn != NULL) {
+      // Draw circle on this pawn
+      DrawCircle(widget, selectPlayerPawn->pos.line, selectPlayerPawn->pos.column,
+                 PLAYERS_COLOR[selectPlayerPawn->playerId]);
+      if (newMoves != NULL) {
+
+        // draw possible new moves
+        cursorNewMoves = newMoves;
+        while (cursorNewMoves != NULL) {
+          if (cursorNewMoves->canStay == TRUE)
+            DrawCell(widget, cursorNewMoves->newPosition.line, cursorNewMoves->newPosition.column,
+                     PLAYERS_COLOR[selectPlayerPawn->playerId]);
+          cursorNewMoves = cursorNewMoves->next;
+        }
+
+        // draw path
+        cursorNewMoves = newMoves;
+        while (cursorNewMoves != NULL) {
+          // draw path for the future new move where the mouse is on
+          if ((mouseCellX == cursorNewMoves->newPosition.column) && (mouseCellY == cursorNewMoves->newPosition.line)) {
+            if (cursorNewMoves->canStay == TRUE) {
+              cursorPath = cursorNewMoves;
+              while ((cursorPath != NULL) && (cursorPath->from != NULL)) {
+                DrawCellPath(widget, oldPathCellX, oldPathCellY, cursorPath->newPosition.column,
+                             cursorPath->newPosition.line, PLAYERS_PATH_COLOR[currentPlayer]);
+                oldPathCellX = cursorPath->newPosition.column;
+                oldPathCellY = cursorPath->newPosition.line;
+                cursorPath = cursorPath->from;
+              }
+              DrawCellPath(widget, oldPathCellX, oldPathCellY, selectPlayerPawn->pos.column, selectPlayerPawn->pos.line,
+                           PLAYERS_PATH_COLOR[currentPlayer]);
+            }
+          }
+          cursorNewMoves = cursorNewMoves->next;
+        }
+        cursorNewMoves = NULL;
       }
     }
   }
-  //  }
-
   // start a new round
   if (gameState == NEW_MOVE_DONE) {
     //***** CHANGE CURRENT PLAYER FOR NEXT ROUND *****
@@ -366,6 +400,7 @@ void QuitGame() {
   free(pPlayersPawns);
   free(pChessboard);
   free(sqrtDistanceTable);
+  WaitPawnProcess();
 
   // remove global surface on which we draw the game
   cairo_surface_destroy(G_SURFACE);
@@ -392,11 +427,12 @@ gboolean ConfigureSurface(GtkWidget* widget, GdkEventConfigure* event, gpointer 
 // event when clic on chessboard
 // clic on empty cell = do nothing
 gboolean EventClickOnBoard(GtkWidget* widget, GdkEventButton* event) {
-  u8 mouseCellX = 0;
-  u8 mouseCellY = 0;
-  u8 isNewMove = FALSE;
+  u8    mouseCellX = 0;
+  u8    mouseCellY = 0;
+  u8    isNewMove = FALSE;
+  Move* cursorNewMoves = NULL;
   GetMouseToCellPosition(event->x, event->y, &mouseCellX, &mouseCellY);
-  pawn* clickedCell = pChessboard[(mouseCellY * CHESSBOARD_SIZE) + mouseCellX];
+  Pawn* clickedCell = pChessboard[(mouseCellY * CHESSBOARD_SIZE) + mouseCellX];
 
   // left clic
   if (event->button == 1) {
@@ -430,18 +466,20 @@ gboolean EventClickOnBoard(GtkWidget* widget, GdkEventButton* event) {
       }
       // check if clicked on future new moves
       else if (clickedCell == NULL) {
-        pTmpMove = allNewMoves;
+        cursorNewMoves = newMoves;
         // draw possible new moves
-        while (pTmpMove != NULL) {
-          if ((pTmpMove->newPos.line == mouseCellY) && (pTmpMove->newPos.column == mouseCellX)) {
+        while (cursorNewMoves != NULL) {
+          if ((cursorNewMoves->newPosition.line == mouseCellY) && (cursorNewMoves->newPosition.column == mouseCellX)) {
             isNewMove = TRUE;
             // move to the new position
-            MovePawnOnChessboard(pChessboard, pPlayersPawns, currentPlayer, selectPlayerPawn->pawnId,
-                                 pTmpMove->newPos.column, pTmpMove->newPos.line);
+            MovePawn(pChessboard, selectPlayerPawn, cursorNewMoves->newPosition.line,
+                     cursorNewMoves->newPosition.column);
             WaitPawnProcess();
             gameState = NEW_MOVE_DONE;
+            cursorNewMoves = NULL;
+          } else {
+            cursorNewMoves = cursorNewMoves->next;
           }
-          pTmpMove = pTmpMove->pNextMove;
         }
         if (isNewMove == FALSE) {
           WaitPawnProcess();
@@ -460,8 +498,8 @@ gboolean EventClickOnBoard(GtkWidget* widget, GdkEventButton* event) {
 void UpdateStatusBar(GtkWidget* statusBar, u8 currentPlayer, u8 currentRound) {
   guint pTmpMoveGuint = gtk_statusbar_get_context_id(GTK_STATUSBAR(statusBar), GAME_STATUS_STR);
   gchar statusBarString[45];
-  snprintf(statusBarString, sizeof statusBarString, "Player's turn: %s, current round: %d", PLAYERS_STR[currentPlayer],
-           currentRound);
+  snprintf(statusBarString, sizeof statusBarString, "Player's turn: %s, current round: %d",
+           PLAYERS_STRING[currentPlayer], currentRound);
   gtk_statusbar_pop(GTK_STATUSBAR(statusBar), pTmpMoveGuint);
   gtk_statusbar_push(GTK_STATUSBAR(statusBar), pTmpMoveGuint, statusBarString);
 }
@@ -517,18 +555,18 @@ void EventNbPlayersChanged(GtkWidget* radioMenuItem, gpointer data) {
 // used many time inside click event
 void WaitPawnProcess() {
   selectPlayerPawn = NULL;
-  FreeLinkedListMoves(&allNewMoves);
+  FreeLinkedListMoves(&newMoves);
 }
 
 // used many time inside click event
-void NewPawnSelectedProcess(pawn* selectedPawn) {
+void NewPawnSelectedProcess(Pawn* selectedPawn) {
   WaitPawnProcess();
   selectPlayerPawn = selectedPawn;
   currentType = selectedPawn->type;
   currentLine = selectedPawn->pos.line;
   currentColumn = selectedPawn->pos.column;
-  allNewMoves = ComputeFutureMoves(currentLine, currentColumn, OUT_OF_BOUND, OUT_OF_BOUND, currentType, currentPlayer,
-                                   FALSE, pChessboard);
+  newMoves =
+      ComputeFutureMoves(newMoves, NULL, MAX_DEPTH, OUT_OF_BOUND, OUT_OF_BOUND, selectedPawn, FALSE, pChessboard);
 }
 
 // just about me, nothing special. Modal Dialog

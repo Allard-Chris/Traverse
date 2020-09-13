@@ -100,7 +100,7 @@ void FreePNGSurface() {
 }
 
 // draw all pawns
-void DrawPawns(GtkWidget* widget, pawn** pChessboard) {
+void DrawPawns(GtkWidget* widget, Pawn** pChessboard) {
   cairo_t* cr = cairo_create(G_SURFACE);
   u8       playerId = 0;
   u8       pawnType = 0;

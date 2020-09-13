@@ -93,7 +93,7 @@ void             FreePNGSurface();
 void             GetMouseToCellPosition(gdouble mX, gdouble mY, u8* cX, u8* cY);
 void             ClearSurface();
 void             DrawChessboard(GtkWidget* widget);
-void             DrawPawns(GtkWidget* widget, pawn** pChessboard);
+void             DrawPawns(GtkWidget* widget, Pawn** pChessboard);
 void             DrawCell(GtkWidget* widget, u8 line, u8 column, color currentColor);
 void             DrawCircle(GtkWidget* widget, u8 line, u8 column, color currentColor);
 void             DrawCellPath(GtkWidget* widget, u8 cx1, u8 cy1, u8 cx2, u8 cy2, color currentColor);
