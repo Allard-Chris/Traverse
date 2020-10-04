@@ -256,6 +256,7 @@ gboolean GameLogic(GtkWidget* widget, GdkEventMotion* event, gpointer data) {
   // check if one player win the game
 
   if (GameOver(nbPlayers, pPlayersPawns) != -1) {
+    WinnerAlert(GameOver(nbPlayers, pPlayersPawns));
     ResetGameLogicVariables();
   }
 
@@ -503,16 +504,16 @@ void UpdateStatusBar(GtkWidget* statusBar, u8 currentPlayer, u8 currentRound) {
   gtk_label_set_label(GTK_LABEL(lPlayerStr), "Player's turn: ");
   switch (currentPlayer) {
   case 0:
-    gtk_label_set_markup(GTK_LABEL(lPlayer), "<span foreground='#CC0000' weight='bold' font='14'>Player 1</span>");
+    gtk_label_set_markup(GTK_LABEL(lPlayer), "<span foreground='#CC0000' weight='bold' font='10'>Player 1</span>");
     break;
   case 1:
-    gtk_label_set_markup(GTK_LABEL(lPlayer), "<span foreground='#3333CC' weight='bold' font='14'>Player 2</span>");
+    gtk_label_set_markup(GTK_LABEL(lPlayer), "<span foreground='#3333CC' weight='bold' font='10'>Player 2</span>");
     break;
   case 2:
-    gtk_label_set_markup(GTK_LABEL(lPlayer), "<span foreground='#33B200' weight='bold' font='14'>Player 3</span>");
+    gtk_label_set_markup(GTK_LABEL(lPlayer), "<span foreground='#33B200' weight='bold' font='10'>Player 3</span>");
     break;
   case 3:
-    gtk_label_set_markup(GTK_LABEL(lPlayer), "<span foreground='#FF9900' weight='bold' font='14'>Player 4</span>");
+    gtk_label_set_markup(GTK_LABEL(lPlayer), "<span foreground='#FF9900' weight='bold' font='10'>Player 4</span>");
     break;
   }
   gtk_label_set_label(GTK_LABEL(lRoundStr), statusBarString);
@@ -583,6 +584,32 @@ void NewPawnSelectedProcess(Pawn* selectedPawn) {
       ComputeFutureMoves(newMoves, NULL, MAX_DEPTH, OUT_OF_BOUND, OUT_OF_BOUND, selectedPawn, FALSE, pChessboard);
 }
 
+void WinnerAlert(u8 winnerId) {
+  GtkWidget* lWinner = gtk_label_new("");
+  switch (winnerId) {
+  case 0:
+    gtk_label_set_markup(GTK_LABEL(lWinner), "<span>The </span><span foreground='#CC0000' weight='bold' "
+                                             "font='10'>Player 1</span><span> win this game !</span>");
+    break;
+  case 1:
+    gtk_label_set_markup(GTK_LABEL(lWinner), "<span>The </span><span foreground='#3333CC' weight='bold' "
+                                             "font='10'>Player 2</span><span> win this game !</span>");
+    break;
+  case 2:
+    gtk_label_set_markup(GTK_LABEL(lWinner), "<span>The </span><span foreground='#33B200' weight='bold' "
+                                             "font='10'>Player 3</span><span> win this game !</span>");
+    break;
+  case 3:
+    gtk_label_set_markup(GTK_LABEL(lWinner), "<span>The </span><span foreground='#FF9900' weight='bold' "
+                                             "font='10'>Player 4</span><span> win this game !</span>");
+    break;
+  }
+  dialogWinner = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_MODAL, GTK_MESSAGE_INFO,
+                                                    GTK_BUTTONS_CLOSE, gtk_label_get_label(GTK_LABEL(lWinner)));
+  gtk_dialog_run(GTK_DIALOG(dialogWinner));
+  gtk_widget_destroy(dialogWinner);
+}
+
 // just about me, nothing special. Modal Dialog
 void RulesMessage() {
   dialogRules = gtk_message_dialog_new(GTK_WINDOW(window), GTK_DIALOG_MODAL, GTK_MESSAGE_INFO, GTK_BUTTONS_CLOSE,
@@ -609,14 +636,11 @@ Players can not force a draw.");
 
 // just about me, nothing special. Modal Dialog
 void AboutMessage() {
-  dialogAbout = gtk_message_dialog_new(GTK_WINDOW(window), GTK_DIALOG_MODAL, GTK_MESSAGE_INFO, GTK_BUTTONS_CLOSE,
-                                       "Thank you for playing Traverse.\n\
-This game was just a school project.\n\
-Original game created in 1987 and won in 1992 the 'Mensa Select' price.\n\
-All source code at: https://github.com/Allard-Chris/Traverse\n\
-Please report bugs :).\n\
-\n\
-Version 1.0");
-  gtk_dialog_run(GTK_DIALOG(dialogAbout));
-  gtk_widget_destroy(dialogAbout);
+  GdkPixbuf*   pixbuf = gdk_pixbuf_new_from_inline(-1, logo_inline, FALSE, NULL);
+  const gchar* authors[2] = {"Allard Chris <allard.chris@protonmail.com>", NULL};
+  gtk_show_about_dialog(GTK_WINDOW(window), "authors", (const gchar**)authors, "program-name", PACKAGE_NAME, "version",
+                        PACKAGE_VERSION, "logo", pixbuf, "website", "https://github.com/Allard-Chris/Traverse",
+                        "website-label", "code source", "comments", "This game was just a school project.\n\
+Original game created in 1987 and won in 1992 the 'Mensa Select' price.",
+                        "license-type", GTK_LICENSE_GPL_3_0_ONLY, NULL);
 }

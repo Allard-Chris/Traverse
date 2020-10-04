@@ -2,11 +2,14 @@
 #define _HEADER_MAIN_H
 
 // imports libs
+#include "logo.h"
 #include "math.h"
 #include "traverse.h"
 #include "traverse_gtk.h"
 #include "utils.h"
 
+#define PACKAGE_NAME    "Traverse Board Game"
+#define PACKAGE_VERSION "1.0"
 #define GAME_STATUS_STR "GameStatus"
 #define WAIT_PAWN       0
 #define PAWN_SELECTED   1
@@ -20,6 +23,7 @@ cairo_surface_t* G_SURFACE;
 GtkWidget*       statusBar;
 GtkWidget*       dialogAbout;
 GtkWidget*       dialogRules;
+GtkWidget*       dialogWinner;
 // widget for menu
 GtkWidget* humanRadioItem;
 GtkWidget* player2RadioItem;
@@ -64,6 +68,7 @@ void     WaitPawnProcess();
 void     NewPawnSelectedProcess(Pawn* selectedPawn);
 void     AboutMessage();
 void     RulesMessage();
+void     WinnerAlert(u8 winnerId);
 void     QuitGame();
 
 #endif // _HEADER_MAIN_H

@@ -1,13 +1,13 @@
-NAME			:= Traverse
-CC				:= gcc
-SRC_DIR			:= ./src
-BUILD_DIR		:= ./build
-BIN_DIR			:= ./bin
+NAME					:= Traverse
+CC						:= gcc
+SRC_DIR				:= ./src
+BUILD_DIR			:= ./build
+BIN_DIR				:= ./bin
 ASSETS_DIR		:= $(SRC_DIR)/assets
-SRC_FILES		:= $(wildcard $(SRC_DIR)/*.c)
+SRC_FILES			:= $(wildcard $(SRC_DIR)/*.c)
 ASSETS_FILES	:= $(wildcard $(SRC_DIR)/assets/*.png)
-CFLAGS			:= -Wall `xml2-config --cflags` `pkg-config --cflags gtk+-3.0`
-LDFLAGS			:= `xml2-config --libs` `pkg-config --libs gtk+-3.0`
+CFLAGS				:= -Wall `xml2-config --cflags` `pkg-config --cflags gtk+-3.0`
+LDFLAGS				:= `xml2-config --libs` `pkg-config --libs gtk+-3.0`
 
 all: clean config release
 
