@@ -3,6 +3,8 @@
 
 // imports libs
 #include "logo.h"
+#include "moves.h"
+#include "jump.h"
 #include "math.h"
 #include "traverse.h"
 #include "traverse_gtk.h"

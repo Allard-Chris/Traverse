@@ -584,6 +584,7 @@ void NewPawnSelectedProcess(Pawn* selectedPawn) {
       ComputeFutureMoves(newMoves, NULL, MAX_DEPTH, OUT_OF_BOUND, OUT_OF_BOUND, selectedPawn, FALSE, pChessboard);
 }
 
+// show dialog box to inform the winner
 void WinnerAlert(u8 winnerId) {
   GtkWidget* lWinner = gtk_label_new("");
   switch (winnerId) {
@@ -612,26 +613,31 @@ void WinnerAlert(u8 winnerId) {
 
 // just about me, nothing special. Modal Dialog
 void RulesMessage() {
-  dialogRules = gtk_message_dialog_new(GTK_WINDOW(window), GTK_DIALOG_MODAL, GTK_MESSAGE_INFO, GTK_BUTTONS_CLOSE,
-                                       "Traverse is played on a square 'checker' game board with a 10 by 10 grid.\n\
-Each player has eight pieces of the same color: 2 squares, 2 diamonds, 2 triangles and 2 circles.\n\
-\n\
-The object of the game is to get all of your pieces into the starting row of the player sitting opposite of you.\n\
-The pieces move in different directions depending upon the shape:\n\
-\t- Squares can move horizontally and vertically.\n\
-\t- Diamonds can move only diagonally.\n\
-\t- Triangles can move forward on the diagonals or straight backwards.\n\
-\t- Circles can move in any direction.\n\
-\n\
-Players take turns moving one piece each turn.\n\
-Two pieces can not occupy the same space.\n\
-Pieces can move in single space moves, one space at a time and only into an empty adjacent space as dictated by the piece's legal moves.\n\
-Players can jump over their own or another player's piece. Jumped pieces are NOT captured, akin to Chinese Checkers.\n\
-Players can string together a series of jumps if each individual jump in the series conforms to the rules governing single jumps.\n\
-The first player to move all of their pieces into the destination row is the winner.\n\
-Players can not force a draw.");
-  gtk_dialog_run(GTK_DIALOG(dialogRules));
-  gtk_widget_destroy(dialogRules);
+  GtkWidget *dialog, *label_intro, *label_rules, *content_area;
+  GdkPixbuf* pixbuf_moves = gdk_pixbuf_new_from_inline(-1, moves_inline, FALSE, NULL);
+  GdkPixbuf* pixbuf_jump = gdk_pixbuf_new_from_inline(-1, jump_inline, FALSE, NULL);
+  GtkWidget* img_moves = gtk_image_new_from_pixbuf(pixbuf_moves);
+  GtkWidget* img_jump = gtk_image_new_from_pixbuf(pixbuf_jump);
+
+  dialog = gtk_dialog_new_with_buttons("Rules", GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, "OK", GTK_RESPONSE_NONE, NULL);
+  content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+  g_signal_connect_swapped(dialog, "response", G_CALLBACK(gtk_widget_destroy), dialog);
+
+  label_intro = gtk_label_new("Introduction:\nTraverse is played on a square 'checker' game board with a 10 by 10 grid.\n\
+Each player has eight pieces of the same color: 2 squares, 2 diamonds, 2 triangles and 2 circles.\n\n\
+Goal:\nThe object of the game is to get all of your pieces into the starting row of the player sitting opposite of you.\n\
+The pieces move in different directions depending upon the shape:\n");
+  gtk_container_add(GTK_CONTAINER(content_area), label_intro);
+  gtk_container_add(GTK_CONTAINER(content_area), img_moves);
+
+  label_rules = gtk_label_new("\nPieces can move in single space moves, one space at a time and only into an empty adjacent space.\n\
+Players can't stay at the edge of the chessboard.\n\
+Players can jump over their own or another player's piece.\n\
+Jumped pieces are NOT captured, akin to Chinese Checkers.\n\
+Players can do series of jumps if each individual jump in the series conforms to the rules governing single jumps:\n");
+  gtk_container_add(GTK_CONTAINER(content_area), label_rules);
+  gtk_container_add(GTK_CONTAINER(content_area), img_jump);
+  gtk_widget_show_all(dialog);
 }
 
 // just about me, nothing special. Modal Dialog
